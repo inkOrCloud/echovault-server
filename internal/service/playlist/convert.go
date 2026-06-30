@@ -23,16 +23,3 @@ func EntToProto(p *ent.Playlist) *playlistpb.Playlist {
 		UpdatedAt:   convert.PTime(p.UpdatedAt),
 	}
 }
-
-func playlistTypeToProto(s string) playlistpb.Playlist_Type {
-	switch s {
-	case "user":
-		return playlistpb.Playlist_TYPE_USER
-	case "favorite":
-		return playlistpb.Playlist_TYPE_FAVORITE
-	case "auto":
-		return playlistpb.Playlist_TYPE_AUTO
-	default:
-		return playlistpb.Playlist_TYPE_UNSPECIFIED
-	}
-}

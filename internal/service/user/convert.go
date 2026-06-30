@@ -30,7 +30,7 @@ func EntDeviceToProto(d *ent.Device) *userpb.Device {
 		Platform:      d.Platform,
 		OsVersion:     d.OsVersion,
 		ClientVersion: d.ClientVersion,
-		LastSyncAt:    convert.PTime(d.LastSyncAt),
+		LastSyncAt:    convert.PTimeSafe(d.LastSyncAt),
 		RegisteredAt:  convert.PTime(d.CreatedAt),
 	}
 }

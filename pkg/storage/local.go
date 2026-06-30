@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,10 +13,10 @@ type LocalStorage struct {
 
 func NewLocalStorage(basePath string) (*LocalStorage, error) {
 	if err := os.MkdirAll(filepath.Join(basePath, "songs"), 0755); err != nil {
-		return nil, fmt.Errorf("create songs dir: %w", err)
+		return nil, err
 	}
 	if err := os.MkdirAll(filepath.Join(basePath, "covers"), 0755); err != nil {
-		return nil, fmt.Errorf("create covers dir: %w", err)
+		return nil, err
 	}
 	return &LocalStorage{basePath: basePath}, nil
 }
@@ -48,7 +47,7 @@ func (s *LocalStorage) GetAudio(_ context.Context, songID string) (io.ReadCloser
 	fpath := filepath.Join(dir, entries[0].Name())
 	fi, err := os.Stat(fpath)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, &StorageNotFoundError{Type: "audio", ID: songID}
 	}
 	f, err := os.Open(fpath)
 	if err != nil {

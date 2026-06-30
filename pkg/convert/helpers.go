@@ -1,8 +1,9 @@
 package convert
 
 import (
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func PTime(t time.Time) *timestamppb.Timestamp {
@@ -73,4 +74,11 @@ func FileStatusToEnt(s string) string {
 	default:
 		return "local_only"
 	}
+}
+
+func PTimeSafe(t *time.Time) *timestamppb.Timestamp {
+	if t == nil || t.IsZero() {
+		return nil
+	}
+	return timestamppb.New(*t)
 }
