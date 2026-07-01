@@ -2,29 +2,33 @@ package grpc
 
 import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/lyric"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/playlist"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/song"
-	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/user"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
-	userpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/user/v1"
-	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/user"
+
+	lyricpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/lyric/v1"
+	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
 	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
+	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	userpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/user/v1"
 	"google.golang.org/grpc"
 )
 
 func RegisterAll(s *grpc.Server, client *ent.Client, jwtSecret string) {
 	userSvc := user.NewService(client, jwtSecret)
-	userHandler := NewUserHandler(userSvc)
-	userpb.RegisterUserServiceServer(s, userHandler)
+	userpb.RegisterUserServiceServer(s, NewUserHandler(userSvc))
 
 	syncSvc := sync.NewService(client)
-	syncHandler := NewSyncHandler(syncSvc)
-	syncpb.RegisterSyncServiceServer(s, syncHandler)
+	syncpb.RegisterSyncServiceServer(s, NewSyncHandler(syncSvc))
 
 	songSvc := song.NewService(client)
-	songHandler := NewSongHandler(songSvc)
-	songpb.RegisterSongServiceServer(s, songHandler)
-}
+	songpb.RegisterSongServiceServer(s, NewSongHandler(songSvc))
 
-func AuthInterceptorOpts(secret string) grpc.ServerOption {
-	return grpc.UnaryInterceptor(AuthInterceptor(secret))
+	lyricSvc := lyric.NewService(client)
+	lyricpb.RegisterLyricServiceServer(s, NewLyricHandler(lyricSvc))
+
+	playlistSvc := playlist.NewService(client)
+	playlistpb.RegisterPlaylistServiceServer(s, NewPlaylistHandler(playlistSvc))
 }
