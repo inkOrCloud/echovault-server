@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	entgo.io/ent v0.14.6
+	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
