@@ -151,3 +151,73 @@ func TestListSongs(t *testing.T) {
 		t.Errorf("ListSongs(limit=3) = %d, want <=3", len(songs))
 	}
 }
+
+func TestUpdateFromScan_FillsEmptyFields(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := song.NewService(client)
+	ctx := context.Background()
+
+	// 用户手动发布，Title 已填，Artist 和 Album 留空
+	pubResp, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+		Title: "User Title", Artist: "", Album: "",
+		FileHash: "old-hash", FileName: "user.mp3",
+	})
+
+	// 上传后从 tag 提取的元数据
+	err := svc.UpdateFromScan(ctx, pubResp.Id, "Tag Title", "Tag Artist", "Tag Album",
+		"Tag Genre", 3, 1, 2024, "new-hash-abc", "song.mp3", "audio/mpeg", 12345)
+	if err != nil {
+		t.Fatalf("UpdateFromScan() error = %v", err)
+	}
+
+	// 验证
+	updated, _ := svc.GetSong(ctx, pubResp.Id)
+	if updated.Title != "User Title" {
+		t.Errorf("Title = %q, want %q (should NOT be overwritten)", updated.Title, "User Title")
+	}
+	if updated.Artist != "Tag Artist" {
+		t.Errorf("Artist = %q, want %q (should be filled)", updated.Artist, "Tag Artist")
+	}
+	if updated.Album != "Tag Album" {
+		t.Errorf("Album = %q, want %q (should be filled)", updated.Album, "Tag Album")
+	}
+	if updated.FileHash != "new-hash-abc" {
+		t.Errorf("FileHash = %q, want %q", updated.FileHash, "new-hash-abc")
+	}
+	if updated.FileSize != 12345 {
+		t.Errorf("FileSize = %d, want 12345", updated.FileSize)
+	}
+}
+
+func TestUpdateFromScan_AllFieldsAlreadySet(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := song.NewService(client)
+	ctx := context.Background()
+
+	// 用户手动填写了所有字段
+	pubResp, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+		Title: "My Title", Artist: "My Artist", Album: "My Album",
+		Genre: "Rock", FileHash: "hash1", FileName: "track.mp3",
+	})
+
+	// tag 信息应该不覆盖任何已有字段
+	err := svc.UpdateFromScan(ctx, pubResp.Id,
+		"Tag Title", "Tag Artist", "Tag Album", "Tag Genre",
+		3, 1, 2024, "new-hash", "track.mp3", "audio/mpeg", 9999)
+	if err != nil {
+		t.Fatalf("UpdateFromScan() error = %v", err)
+	}
+
+	updated, _ := svc.GetSong(ctx, pubResp.Id)
+	if updated.Title != "My Title" {
+		t.Errorf("Title = %q, want 'My Title'", updated.Title)
+	}
+	if updated.Artist != "My Artist" {
+		t.Errorf("Artist = %q, want 'My Artist'", updated.Artist)
+	}
+	if updated.FileHash != "new-hash" {
+		t.Errorf("FileHash = %q, want 'new-hash' (always update)", updated.FileHash)
+	}
+}

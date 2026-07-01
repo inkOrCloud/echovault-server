@@ -148,3 +148,51 @@ func entListToProto(records []*ent.Song) []*songpb.Song {
 	}
 	return result
 }
+
+// UpdateFromScan 用扫描提取的元数据补充 Song 记录中用户未填的字段。
+// 只补充空字段（title/artist/album/genre/track_number/disc_number/year），
+// 并更新 file_hash/file_size/mime_type（这些总是以 scan 结果为准）。
+func (s *Service) UpdateFromScan(ctx context.Context, songID, title, artist, album, genre string,
+	trackNumber, discNumber, year int32,
+	fileHash, fileName, mimeType string, fileSize int64) error {
+
+	r, err := s.client.Song.Get(ctx, songID)
+	if err != nil {
+		return err
+	}
+
+	updater := s.client.Song.UpdateOneID(songID)
+
+	// 仅当用户未填时用 tag 值补充
+	if r.Title == "" && title != "" {
+		updater.SetTitle(title)
+	}
+	if r.Artist == "" && artist != "" {
+		updater.SetArtist(artist)
+	}
+	if r.Album == "" && album != "" {
+		updater.SetAlbum(album)
+	}
+	if r.Genre == "" && genre != "" {
+		updater.SetGenre(genre)
+	}
+	if r.TrackNumber == 0 && trackNumber > 0 {
+		updater.SetTrackNumber(trackNumber)
+	}
+	if r.DiscNumber == 0 && discNumber > 0 {
+		updater.SetDiscNumber(discNumber)
+	}
+	if r.Year == 0 && year > 0 {
+		updater.SetYear(year)
+	}
+
+	// 文件信息总是更新（上传时才有确切值）
+	updater.SetFileHash(fileHash)
+	updater.SetFileSize(fileSize)
+	updater.SetMimeType(mimeType)
+	updater.SetFileName(fileName)
+	updater.SetFileStatus("uploaded")
+	updater.SetSource("uploaded")
+
+	return updater.Exec(ctx)
+}

@@ -19,10 +19,25 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	evgrpc "github.com/inkOrCloud/EchoVault/echovault-server/internal/grpc"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/rest"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/song"
+	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/metadata"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/storage"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// songUpdaterAdapter 桥接 REST handler 的 SongUpdater 到 SongService。
+type songUpdaterAdapter struct {
+	svc *song.Service
+}
+
+func (a *songUpdaterAdapter) UpdateFromScan(songID string, meta *metadata.AudioMetadata, fileSize int64) error {
+	err := a.svc.UpdateFromScan(context.Background(), songID,
+		meta.Title, meta.Artist, meta.Album, meta.Genre,
+		int32(meta.TrackNumber), int32(meta.DiscNumber), int32(meta.Year),
+		meta.FileHash, meta.FileName, meta.MIMEType, fileSize)
+	return err
+}
 
 func main() {
 	viper.SetDefault("grpc_port", 9090)
@@ -68,7 +83,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to init storage: %v", err)
 	}
-	restHandler := rest.NewHandler(storageSvc)
+
+	// 创建 SongUpdater adapter
+	songSvc := song.NewService(client)
+	songUpdater := &songUpdaterAdapter{svc: songSvc}
+
+	restHandler := rest.NewHandler(storageSvc, songUpdater)
 	ginServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", viper.GetInt("rest_port")),
 		Handler: restHandler,
