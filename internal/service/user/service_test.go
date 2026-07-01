@@ -143,3 +143,68 @@ func TestGetUser_Success(t *testing.T) {
 		t.Errorf("GetUser() Username = %q, want %q", u.Username, "getme")
 	}
 }
+
+func TestRegisterDevice_Success(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := user.NewService(client, "test-secret")
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, "deviceuser", "DevicePass1", "Device User")
+	err := svc.RegisterDevice(ctx, reg.UserID, "dev-001", "My Desktop", "linux")
+	if err != nil {
+		t.Fatalf("RegisterDevice() error = %v", err)
+	}
+}
+
+func TestRegisterDevice_DuplicateID(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := user.NewService(client, "test-secret")
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, "dupdev", "DupDevPass1", "Dup Device")
+	svc.RegisterDevice(ctx, reg.UserID, "dev-001", "First", "linux")
+	err := svc.RegisterDevice(ctx, reg.UserID, "dev-001", "Second", "macos")
+	if err == nil {
+		t.Fatal("RegisterDevice() expected error for duplicate device ID")
+	}
+}
+
+func TestListDevices(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := user.NewService(client, "test-secret")
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, "listdev", "ListDevP1", "List Dev")
+	svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
+	svc.RegisterDevice(ctx, reg.UserID, "d2", "Phone", "android")
+
+	devices, err := svc.ListDevices(ctx, reg.UserID)
+	if err != nil {
+		t.Fatalf("ListDevices() error = %v", err)
+	}
+	if len(devices) != 2 {
+		t.Errorf("ListDevices() count = %d, want 2", len(devices))
+	}
+}
+
+func TestRemoveDevice(t *testing.T) {
+	client := newTestClient(t)
+	defer client.Close()
+	svc := user.NewService(client, "test-secret")
+	ctx := context.Background()
+
+	reg, _ := svc.Register(ctx, "rmdev", "RmDevPass1", "Rm Dev")
+	svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
+	err := svc.RemoveDevice(ctx, reg.UserID, "d1")
+	if err != nil {
+		t.Fatalf("RemoveDevice() error = %v", err)
+	}
+
+	devices, _ := svc.ListDevices(ctx, reg.UserID)
+	if len(devices) != 0 {
+		t.Errorf("After RemoveDevice, count = %d, want 0", len(devices))
+	}
+}
