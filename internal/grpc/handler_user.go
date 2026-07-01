@@ -1,0 +1,122 @@
+package grpc
+
+import (
+	"context"
+
+	userpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/user/v1"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/user"
+	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type UserHandler struct {
+	userpb.UnimplementedUserServiceServer
+	svc *user.Service
+}
+
+func NewUserHandler(svc *user.Service) *UserHandler {
+	return &UserHandler{svc: svc}
+}
+
+func (h *UserHandler) Register(ctx context.Context, req *userpb.RegisterRequest) (*userpb.RegisterResponse, error) {
+	resp, err := h.svc.Register(ctx, req.Username, req.Password, req.DisplayName)
+	if err != nil {
+		code := codes.InvalidArgument
+		if err.Error() == "username already exists" {
+			code = codes.AlreadyExists
+		}
+		return nil, status.Error(code, err.Error())
+	}
+	u, err := h.svc.GetUser(ctx, resp.UserID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get created user")
+	}
+	return &userpb.RegisterResponse{
+		User:        convertUser(u),
+		AccessToken: resp.Token,
+	}, nil
+}
+
+func (h *UserHandler) Login(ctx context.Context, req *userpb.LoginRequest) (*userpb.LoginResponse, error) {
+	resp, err := h.svc.Login(ctx, req.Username, req.Password, req.DeviceId)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+	u, _ := h.svc.GetUser(ctx, resp.UserID)
+	return &userpb.LoginResponse{
+		User:        convertUser(u),
+		AccessToken: resp.Token,
+	}, nil
+}
+
+func (h *UserHandler) GetCurrentUser(ctx context.Context, _ *userpb.GetCurrentUserRequest) (*userpb.GetCurrentUserResponse, error) {
+	userID := GetUserID(ctx)
+	if userID == "" {
+		return nil, status.Error(codes.Unauthenticated, "not authenticated")
+	}
+	u, err := h.svc.GetUser(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+	return &userpb.GetCurrentUserResponse{User: convertUser(u)}, nil
+}
+
+func (h *UserHandler) ListDevices(ctx context.Context, _ *userpb.ListDevicesRequest) (*userpb.ListDevicesResponse, error) {
+	userID := GetUserID(ctx)
+	devices, err := h.svc.ListDevices(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	pbDevices := make([]*userpb.Device, len(devices))
+	for i, d := range devices {
+		pbDevices[i] = convertDevice(d)
+	}
+	return &userpb.ListDevicesResponse{Devices: pbDevices}, nil
+}
+
+func (h *UserHandler) RegisterDevice(ctx context.Context, req *userpb.RegisterDeviceRequest) (*userpb.RegisterDeviceResponse, error) {
+	userID := GetUserID(ctx)
+	if err := h.svc.RegisterDevice(ctx, userID, req.DeviceId, req.DeviceName, req.Platform); err != nil {
+		return nil, status.Error(codes.AlreadyExists, err.Error())
+	}
+	return &userpb.RegisterDeviceResponse{}, nil
+}
+
+func (h *UserHandler) RemoveDevice(ctx context.Context, req *userpb.RemoveDeviceRequest) (*userpb.RemoveDeviceResponse, error) {
+	userID := GetUserID(ctx)
+	if err := h.svc.RemoveDevice(ctx, userID, req.DeviceId); err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+	return &userpb.RemoveDeviceResponse{}, nil
+}
+
+func convertUser(u *ent.User) *userpb.User {
+	if u == nil {
+		return nil
+	}
+	return &userpb.User{
+		Id:          u.ID,
+		Username:    u.Username,
+		DisplayName: u.DisplayName,
+		Role:        u.Role,
+		CreatedAt:   convert.PTime(u.CreatedAt),
+		UpdatedAt:   convert.PTime(u.UpdatedAt),
+	}
+}
+
+func convertDevice(d *ent.Device) *userpb.Device {
+	if d == nil {
+		return nil
+	}
+	return &userpb.Device{
+		DeviceId:      d.DeviceID,
+		DeviceName:    d.DeviceName,
+		Platform:      d.Platform,
+		OsVersion:     d.OsVersion,
+		ClientVersion: d.ClientVersion,
+		LastSyncAt:    convert.PTimeSafe(d.LastSyncAt),
+		RegisteredAt:  convert.PTime(d.CreatedAt),
+	}
+}
