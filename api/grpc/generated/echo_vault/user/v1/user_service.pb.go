@@ -7,9 +7,9 @@
 package userpb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -29,8 +29,8 @@ type User struct {
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	DisplayName   string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	Role          string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"` // "admin" | "user"
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CreatedAt     *timestamp.Timestamp   `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamp.Timestamp   `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -93,14 +93,14 @@ func (x *User) GetRole() string {
 	return ""
 }
 
-func (x *User) GetCreatedAt() *timestamppb.Timestamp {
+func (x *User) GetCreatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *User) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *User) GetUpdatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
@@ -115,8 +115,8 @@ type Device struct {
 	Platform      string                 `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"` // "windows" | "macos" | "linux" | "android" | "ios" | "web"
 	OsVersion     string                 `protobuf:"bytes,4,opt,name=os_version,json=osVersion,proto3" json:"os_version,omitempty"`
 	ClientVersion string                 `protobuf:"bytes,5,opt,name=client_version,json=clientVersion,proto3" json:"client_version,omitempty"`
-	LastSyncAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_sync_at,json=lastSyncAt,proto3" json:"last_sync_at,omitempty"`
-	RegisteredAt  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
+	LastSyncAt    *timestamp.Timestamp   `protobuf:"bytes,6,opt,name=last_sync_at,json=lastSyncAt,proto3" json:"last_sync_at,omitempty"`
+	RegisteredAt  *timestamp.Timestamp   `protobuf:"bytes,7,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -186,14 +186,14 @@ func (x *Device) GetClientVersion() string {
 	return ""
 }
 
-func (x *Device) GetLastSyncAt() *timestamppb.Timestamp {
+func (x *Device) GetLastSyncAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.LastSyncAt
 	}
 	return nil
 }
 
-func (x *Device) GetRegisteredAt() *timestamppb.Timestamp {
+func (x *Device) GetRegisteredAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.RegisteredAt
 	}
@@ -1314,7 +1314,7 @@ var file_echo_vault_user_v1_user_service_proto_goTypes = []any{
 	(*RemoveDeviceResponse)(nil),   // 19: echo_vault.user.v1.RemoveDeviceResponse
 	(*UpdateDeviceRequest)(nil),    // 20: echo_vault.user.v1.UpdateDeviceRequest
 	(*UpdateDeviceResponse)(nil),   // 21: echo_vault.user.v1.UpdateDeviceResponse
-	(*timestamppb.Timestamp)(nil),  // 22: google.protobuf.Timestamp
+	(*timestamp.Timestamp)(nil),    // 22: google.protobuf.Timestamp
 }
 var file_echo_vault_user_v1_user_service_proto_depIdxs = []int32{
 	22, // 0: echo_vault.user.v1.User.created_at:type_name -> google.protobuf.Timestamp

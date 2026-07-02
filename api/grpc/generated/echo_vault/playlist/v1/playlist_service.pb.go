@@ -7,11 +7,11 @@
 package playlistpb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v11 "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/common/v1"
 	v1 "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -88,8 +88,8 @@ type Playlist struct {
 	IsPublic      bool                   `protobuf:"varint,7,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
 	SongCount     int32                  `protobuf:"varint,8,opt,name=song_count,json=songCount,proto3" json:"song_count,omitempty"`
 	Version       int64                  `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CreatedAt     *timestamp.Timestamp   `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamp.Timestamp   `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -187,14 +187,14 @@ func (x *Playlist) GetVersion() int64 {
 	return 0
 }
 
-func (x *Playlist) GetCreatedAt() *timestamppb.Timestamp {
+func (x *Playlist) GetCreatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *Playlist) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Playlist) GetUpdatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
@@ -209,7 +209,7 @@ type PlaylistSong struct {
 	Song          *v1.Song               `protobuf:"bytes,3,opt,name=song,proto3" json:"song,omitempty"`          // 嵌入歌曲信息
 	Position      int32                  `protobuf:"varint,4,opt,name=position,proto3" json:"position,omitempty"` // 排序位置
 	AddedBy       string                 `protobuf:"bytes,5,opt,name=added_by,json=addedBy,proto3" json:"added_by,omitempty"`
-	AddedAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
+	AddedAt       *timestamp.Timestamp   `protobuf:"bytes,6,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -279,7 +279,7 @@ func (x *PlaylistSong) GetAddedBy() string {
 	return ""
 }
 
-func (x *PlaylistSong) GetAddedAt() *timestamppb.Timestamp {
+func (x *PlaylistSong) GetAddedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.AddedAt
 	}
@@ -1289,7 +1289,7 @@ var file_echo_vault_playlist_v1_playlist_service_proto_goTypes = []any{
 	(*ReorderSongsResponse)(nil),      // 18: echo_vault.playlist.v1.ReorderSongsResponse
 	(*ListPlaylistSongsRequest)(nil),  // 19: echo_vault.playlist.v1.ListPlaylistSongsRequest
 	(*ListPlaylistSongsResponse)(nil), // 20: echo_vault.playlist.v1.ListPlaylistSongsResponse
-	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
+	(*timestamp.Timestamp)(nil),       // 21: google.protobuf.Timestamp
 	(*v1.Song)(nil),                   // 22: echo_vault.song.v1.Song
 	(*v11.PaginationRequest)(nil),     // 23: echo_vault.common.v1.PaginationRequest
 	(*v11.PaginationResponse)(nil),    // 24: echo_vault.common.v1.PaginationResponse

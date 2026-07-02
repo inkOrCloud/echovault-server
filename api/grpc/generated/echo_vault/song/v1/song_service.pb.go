@@ -7,10 +7,10 @@
 package songpb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v1 "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -46,8 +46,8 @@ type Song struct {
 	OwnerId       string                 `protobuf:"bytes,18,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	Version       int64                  `protobuf:"varint,19,opt,name=version,proto3" json:"version,omitempty"` // 同步版本号
 	IsDeleted     bool                   `protobuf:"varint,20,opt,name=is_deleted,json=isDeleted,proto3" json:"is_deleted,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CreatedAt     *timestamp.Timestamp   `protobuf:"bytes,21,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamp.Timestamp   `protobuf:"bytes,22,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	CoverUrl      string                 `protobuf:"bytes,23,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"` // REST 封面下载地址
 	AudioUrl      string                 `protobuf:"bytes,24,opt,name=audio_url,json=audioUrl,proto3" json:"audio_url,omitempty"` // REST 音频下载地址
 	unknownFields protoimpl.UnknownFields
@@ -224,14 +224,14 @@ func (x *Song) GetIsDeleted() bool {
 	return false
 }
 
-func (x *Song) GetCreatedAt() *timestamppb.Timestamp {
+func (x *Song) GetCreatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
 	return nil
 }
 
-func (x *Song) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Song) GetUpdatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
@@ -1356,7 +1356,7 @@ var file_echo_vault_song_v1_song_service_proto_goTypes = []any{
 	(*CheckSongsByHashResponse_Result)(nil), // 17: echo_vault.song.v1.CheckSongsByHashResponse.Result
 	(v1.FileSource)(0),                      // 18: echo_vault.common.v1.FileSource
 	(v1.FileStatus)(0),                      // 19: echo_vault.common.v1.FileStatus
-	(*timestamppb.Timestamp)(nil),           // 20: google.protobuf.Timestamp
+	(*timestamp.Timestamp)(nil),             // 20: google.protobuf.Timestamp
 	(*v1.PaginationRequest)(nil),            // 21: echo_vault.common.v1.PaginationRequest
 	(*v1.PaginationResponse)(nil),           // 22: echo_vault.common.v1.PaginationResponse
 }

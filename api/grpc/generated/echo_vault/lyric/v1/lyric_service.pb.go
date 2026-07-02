@@ -7,9 +7,9 @@
 package lyricpb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -136,7 +136,7 @@ type Lyric struct {
 	OffsetMs      int32                  `protobuf:"varint,5,opt,name=offset_ms,json=offsetMs,proto3" json:"offset_ms,omitempty"` // 整体时间轴偏移（毫秒）
 	Source        Lyric_Source           `protobuf:"varint,6,opt,name=source,proto3,enum=echo_vault.lyric.v1.Lyric_Source" json:"source,omitempty"`
 	Version       int64                  `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	UpdatedAt     *timestamp.Timestamp   `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -220,7 +220,7 @@ func (x *Lyric) GetVersion() int64 {
 	return 0
 }
 
-func (x *Lyric) GetUpdatedAt() *timestamppb.Timestamp {
+func (x *Lyric) GetUpdatedAt() *timestamp.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
 	}
@@ -704,18 +704,18 @@ func file_echo_vault_lyric_v1_lyric_service_proto_rawDescGZIP() []byte {
 var file_echo_vault_lyric_v1_lyric_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_echo_vault_lyric_v1_lyric_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_echo_vault_lyric_v1_lyric_service_proto_goTypes = []any{
-	(Lyric_Type)(0),               // 0: echo_vault.lyric.v1.Lyric.Type
-	(Lyric_Source)(0),             // 1: echo_vault.lyric.v1.Lyric.Source
-	(*Lyric)(nil),                 // 2: echo_vault.lyric.v1.Lyric
-	(*GetLyricRequest)(nil),       // 3: echo_vault.lyric.v1.GetLyricRequest
-	(*GetLyricResponse)(nil),      // 4: echo_vault.lyric.v1.GetLyricResponse
-	(*SaveLyricRequest)(nil),      // 5: echo_vault.lyric.v1.SaveLyricRequest
-	(*SaveLyricResponse)(nil),     // 6: echo_vault.lyric.v1.SaveLyricResponse
-	(*DeleteLyricRequest)(nil),    // 7: echo_vault.lyric.v1.DeleteLyricRequest
-	(*DeleteLyricResponse)(nil),   // 8: echo_vault.lyric.v1.DeleteLyricResponse
-	(*SearchLyricRequest)(nil),    // 9: echo_vault.lyric.v1.SearchLyricRequest
-	(*SearchLyricResponse)(nil),   // 10: echo_vault.lyric.v1.SearchLyricResponse
-	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(Lyric_Type)(0),             // 0: echo_vault.lyric.v1.Lyric.Type
+	(Lyric_Source)(0),           // 1: echo_vault.lyric.v1.Lyric.Source
+	(*Lyric)(nil),               // 2: echo_vault.lyric.v1.Lyric
+	(*GetLyricRequest)(nil),     // 3: echo_vault.lyric.v1.GetLyricRequest
+	(*GetLyricResponse)(nil),    // 4: echo_vault.lyric.v1.GetLyricResponse
+	(*SaveLyricRequest)(nil),    // 5: echo_vault.lyric.v1.SaveLyricRequest
+	(*SaveLyricResponse)(nil),   // 6: echo_vault.lyric.v1.SaveLyricResponse
+	(*DeleteLyricRequest)(nil),  // 7: echo_vault.lyric.v1.DeleteLyricRequest
+	(*DeleteLyricResponse)(nil), // 8: echo_vault.lyric.v1.DeleteLyricResponse
+	(*SearchLyricRequest)(nil),  // 9: echo_vault.lyric.v1.SearchLyricRequest
+	(*SearchLyricResponse)(nil), // 10: echo_vault.lyric.v1.SearchLyricResponse
+	(*timestamp.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
 var file_echo_vault_lyric_v1_lyric_service_proto_depIdxs = []int32{
 	0,  // 0: echo_vault.lyric.v1.Lyric.type:type_name -> echo_vault.lyric.v1.Lyric.Type

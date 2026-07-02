@@ -7,9 +7,9 @@
 package syncpb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -131,7 +131,7 @@ type SyncChange struct {
 	Action        SyncChange_Action      `protobuf:"varint,3,opt,name=action,proto3,enum=echo_vault.sync.v1.SyncChange_Action" json:"action,omitempty"`
 	Version       int64                  `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"` // 单调递增的版本号（服务端分配）
 	Data          []byte                 `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`        // 变更后的完整实体（protobuf 序列化）
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp     *timestamp.Timestamp   `protobuf:"bytes,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	DeviceId      string                 `protobuf:"bytes,7,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"` // 来源设备
 	UserId        string                 `protobuf:"bytes,8,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`       // 操作用户
 	unknownFields protoimpl.UnknownFields
@@ -203,7 +203,7 @@ func (x *SyncChange) GetData() []byte {
 	return nil
 }
 
-func (x *SyncChange) GetTimestamp() *timestamppb.Timestamp {
+func (x *SyncChange) GetTimestamp() *timestamp.Timestamp {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -849,7 +849,7 @@ var file_echo_vault_sync_v1_sync_service_proto_goTypes = []any{
 	(*SubscribeChangesResponse)(nil), // 10: echo_vault.sync.v1.SubscribeChangesResponse
 	(*AckChangesRequest)(nil),        // 11: echo_vault.sync.v1.AckChangesRequest
 	(*AckChangesResponse)(nil),       // 12: echo_vault.sync.v1.AckChangesResponse
-	(*timestamppb.Timestamp)(nil),    // 13: google.protobuf.Timestamp
+	(*timestamp.Timestamp)(nil),      // 13: google.protobuf.Timestamp
 }
 var file_echo_vault_sync_v1_sync_service_proto_depIdxs = []int32{
 	0,  // 0: echo_vault.sync.v1.SyncChange.action:type_name -> echo_vault.sync.v1.SyncChange.Action
