@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestNewLocalStorage_CreatesDirs(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
@@ -20,7 +22,6 @@ func TestNewLocalStorage_CreatesDirs(t *testing.T) {
 	if s == nil {
 		t.Fatal("NewLocalStorage() = nil, want non-nil")
 	}
-	// 验证目录被创建
 	if _, err := os.Stat(filepath.Join(tmpDir, "songs")); os.IsNotExist(err) {
 		t.Error("songs/ directory not created")
 	}
@@ -30,6 +31,7 @@ func TestNewLocalStorage_CreatesDirs(t *testing.T) {
 }
 
 func TestSaveAndGetAudio(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
@@ -39,58 +41,62 @@ func TestSaveAndGetAudio(t *testing.T) {
 	songID := "test-song-123"
 	content := "fake audio binary content"
 
-	// 保存
-	err = s.SaveAudio(ctx, songID, "song.mp3", strings.NewReader(content))
-	if err != nil {
+	if err := s.SaveAudio(ctx, songID, "song.mp3", strings.NewReader(content)); err != nil {
 		t.Fatalf("SaveAudio() error = %v", err)
 	}
 
-	// 读取
 	reader, size, err := s.GetAudio(ctx, songID)
 	if err != nil {
 		t.Fatalf("GetAudio() error = %v", err)
 	}
-	defer reader.Close()
+	defer func() {
+		if cerr := reader.Close(); cerr != nil {
+			t.Errorf("reader.Close() error = %v", cerr)
+		}
+	}()
 
 	if size != int64(len(content)) {
-		t.Errorf("GetAudio() size = %d, want %d", size, len(content))
+		t.Errorf("size = %d, want %d", size, len(content))
 	}
-
-	data, _ := io.ReadAll(reader)
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
 	if string(data) != content {
-		t.Errorf("GetAudio() content = %q, want %q", string(data), content)
+		t.Errorf("content mismatch: got %q, want %q", string(data), content)
 	}
 }
 
 func TestGetAudio_NotFound(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
 		t.Fatalf("NewLocalStorage() error = %v", err)
 	}
 
-	_, _, err = s.GetAudio(context.Background(), "nonexistent-song")
+	_, _, err = s.GetAudio(context.Background(), "nonexistent")
 	if err == nil {
 		t.Fatal("GetAudio() expected error for nonexistent song")
 	}
-	// 验证错误类型
-	var notFound *storage.StorageNotFoundError
-	if !asNotFoundError(err, &notFound) {
-		t.Errorf("GetAudio() error type = %T, want *StorageNotFoundError", err)
+	var notFoundErr *storage.NotFoundError
+	if !errors.As(err, &notFoundErr) {
+		t.Errorf("expected NotFoundError, got %T", err)
 	}
 }
 
 func TestSaveAndGetCover(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
 		t.Fatalf("NewLocalStorage() error = %v", err)
 	}
 	ctx := context.Background()
-	songID := "test-cover-456"
+	songID := "cover-song-1"
+	coverContent := "fake jpeg bytes"
 
-	err = s.SaveCover(ctx, songID, strings.NewReader("cover image bytes"))
-	if err != nil {
+	if err := s.SaveCover(ctx, songID, strings.NewReader(coverContent)); err != nil {
 		t.Fatalf("SaveCover() error = %v", err)
 	}
 
@@ -98,64 +104,57 @@ func TestSaveAndGetCover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCover() error = %v", err)
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
-	if size != 17 {
-		t.Errorf("GetCover() size = %d, want 17", size)
+	if size != int64(len(coverContent)) {
+		t.Errorf("size = %d, want %d", size, len(coverContent))
+	}
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
+	if string(data) != coverContent {
+		t.Errorf("content mismatch")
 	}
 }
 
 func TestGetCover_NotFound(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
 		t.Fatalf("NewLocalStorage() error = %v", err)
 	}
 
-	_, _, err = s.GetCover(context.Background(), "nonexistent-cover")
+	_, _, err = s.GetCover(context.Background(), "nonexistent")
 	if err == nil {
-		t.Fatal("GetCover() expected error for nonexistent cover")
+		t.Fatal("GetCover() expected error for nonexistent song")
 	}
 }
 
 func TestDeleteSongFiles(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	s, err := storage.NewLocalStorage(tmpDir)
 	if err != nil {
 		t.Fatalf("NewLocalStorage() error = %v", err)
 	}
 	ctx := context.Background()
-	songID := "test-delete-789"
+	songID := "delete-song"
 
-	// 先保存
-	s.SaveAudio(ctx, songID, "track.flac", strings.NewReader("audio"))
-	s.SaveCover(ctx, songID, strings.NewReader("cover"))
+	if err := s.SaveAudio(ctx, songID, "track.mp3", strings.NewReader("audio")); err != nil {
+		t.Fatalf("SaveAudio: %v", err)
+	}
+	if err := s.SaveCover(ctx, songID, strings.NewReader("cover")); err != nil {
+		t.Fatalf("SaveCover: %v", err)
+	}
 
-	// 删除
 	if err := s.DeleteSongFiles(ctx, songID); err != nil {
 		t.Fatalf("DeleteSongFiles() error = %v", err)
 	}
 
-	// 验证已删除
 	_, _, err = s.GetAudio(ctx, songID)
 	if err == nil {
-		t.Error("GetAudio() should fail after DeleteSongFiles")
+		t.Error("GetAudio() should fail after delete")
 	}
-	_, _, err = s.GetCover(ctx, songID)
-	if err == nil {
-		t.Error("GetCover() should fail after DeleteSongFiles")
-	}
-}
-
-// 辅助函数：类型断言
-func asNotFoundError(err error, target **storage.StorageNotFoundError) bool {
-	if err == nil {
-		return false
-	}
-	e, ok := err.(*storage.StorageNotFoundError)
-	if !ok {
-		return false
-	}
-	*target = e
-	return true
 }

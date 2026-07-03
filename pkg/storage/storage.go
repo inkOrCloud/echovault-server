@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// Storage defines the interface for audio file storage backends.
 type Storage interface {
 	SaveAudio(ctx context.Context, songID, filename string, reader io.Reader) error
 	GetAudio(ctx context.Context, songID string) (io.ReadCloser, int64, error)
@@ -14,22 +15,36 @@ type Storage interface {
 	DeleteSongFiles(ctx context.Context, songID string) error
 }
 
+// NewStorage creates a new Storage backend based on the storage type.
 func NewStorage(storageType, storagePath string) (Storage, error) {
 	switch storageType {
 	case "local":
-		return NewLocalStorage(storagePath)
+		s, err := NewLocalStorage(storagePath)
+		if err != nil {
+			return nil, fmt.Errorf("new local storage: %w", err)
+		}
+		return s, nil
 	case "s3":
-		return NewS3Storage(storagePath, "")
+		s, err := NewS3Storage(storagePath, "")
+		if err != nil {
+			return nil, fmt.Errorf("new s3 storage: %w", err)
+		}
+		return s, nil
 	default:
-		return NewLocalStorage(storagePath)
+		s, err := NewLocalStorage(storagePath)
+		if err != nil {
+			return nil, fmt.Errorf("new local storage: %w", err)
+		}
+		return s, nil
 	}
 }
 
-type StorageNotFoundError struct {
+// NotFoundError is returned when a requested file is not found.
+type NotFoundError struct {
 	Type string
 	ID   string
 }
 
-func (e *StorageNotFoundError) Error() string {
+func (e *NotFoundError) Error() string {
 	return fmt.Sprintf("%s not found: %s", e.Type, e.ID)
 }
