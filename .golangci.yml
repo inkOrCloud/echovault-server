@@ -28,7 +28,7 @@ linters:
       check-blank: false   # 允许 _ = ...
       check-type-assertions: false
     wrapcheck:
-      ignorePackageGlobs:
+      ignore-package-globs:
         - github.com/inkOrCloud/EchoVault/echovault-server/internal/ent*
         - github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/**
     depguard:
