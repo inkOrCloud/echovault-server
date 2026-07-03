@@ -1,3 +1,4 @@
+// Package schema defines the ent schema types for EchoVault.
 package schema
 
 import (
@@ -6,14 +7,18 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
+const deviceNameMaxLen = 128
+
+// Device holds the schema definition for the Device entity.
 type Device struct {
 	ent.Schema
 }
 
+// Fields returns the Device fields.
 func (Device) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("device_id").Unique().Immutable(),
-		field.String("device_name").MaxLen(128).Default(""),
+		field.String("device_name").MaxLen(deviceNameMaxLen).Default(""),
 		field.String("platform").Default(""),
 		field.String("os_version").Default(""),
 		field.String("client_version").Default(""),
@@ -25,6 +30,7 @@ func (Device) Fields() []ent.Field {
 	}
 }
 
+// Indexes returns the Device indexes.
 func (Device) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("user_id"),
