@@ -25,7 +25,7 @@ func NewLyricHandler(svc *lyric.Service) *LyricHandler {
 func (h *LyricHandler) GetLyric(ctx context.Context, req *lyricpb.GetLyricRequest) (*lyricpb.GetLyricResponse, error) {
 	l, err := h.svc.GetLyric(ctx, req.GetSongId(), req.GetLanguage(), req.GetType())
 	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &lyricpb.GetLyricResponse{Lyrics: []*lyricpb.Lyric{l}}, nil
 }
@@ -34,15 +34,16 @@ func (h *LyricHandler) GetLyric(ctx context.Context, req *lyricpb.GetLyricReques
 func (h *LyricHandler) SaveLyric(ctx context.Context, req *lyricpb.SaveLyricRequest) (*lyricpb.SaveLyricResponse, error) {
 	l, err := h.svc.SaveLyric(ctx, req.GetSongId(), req.GetContent(), req.GetType(), req.GetLanguage())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &lyricpb.SaveLyricResponse{Lyric: l}, nil
 }
 
 // DeleteLyric removes lyrics for a song.
 func (h *LyricHandler) DeleteLyric(ctx context.Context, req *lyricpb.DeleteLyricRequest) (*lyricpb.DeleteLyricResponse, error) {
-	if err := h.svc.DeleteLyric(ctx, req.GetSongId(), req.GetType(), req.GetLanguage()); err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+	err := h.svc.DeleteLyric(ctx, req.GetSongId(), req.GetType(), req.GetLanguage())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &lyricpb.DeleteLyricResponse{}, nil
 }
