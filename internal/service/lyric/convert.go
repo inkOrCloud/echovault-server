@@ -1,3 +1,4 @@
+// Package lyric provides lyric management operations.
 package lyric
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+// EntToProto converts an ent Lyric to a proto Lyric.
 func EntToProto(l *ent.Lyric) *lyricpb.Lyric {
 	if l == nil {
 		return nil
