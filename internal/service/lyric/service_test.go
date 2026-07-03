@@ -6,13 +6,12 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
-
+	lyricpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/lyric/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/lyric"
-	lyricpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/lyric/v1"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 )
 
 func newTestClient(t *testing.T) *ent.Client {
@@ -28,7 +27,7 @@ func newTestClient(t *testing.T) *ent.Client {
 func TestSaveAndGetLyric(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := lyric.NewService(client)
 	ctx := context.Background()
 
@@ -45,7 +44,7 @@ func TestSaveAndGetLyric(t *testing.T) {
 func TestGetLyric_NotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := lyric.NewService(client)
 	_, err := svc.GetLyric(context.Background(), "no-such-song", "", lyricpb.Lyric_TYPE_UNSPECIFIED)
 	require.Error(t, err)
@@ -54,7 +53,7 @@ func TestGetLyric_NotFound(t *testing.T) {
 func TestSaveLyric_UpdateExisting(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := lyric.NewService(client)
 	ctx := context.Background()
 
@@ -71,7 +70,7 @@ func TestSaveLyric_UpdateExisting(t *testing.T) {
 func TestSaveLyric_MultipleLanguages(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := lyric.NewService(client)
 	ctx := context.Background()
 
@@ -88,7 +87,7 @@ func TestSaveLyric_MultipleLanguages(t *testing.T) {
 func TestDeleteLyric(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := lyric.NewService(client)
 	ctx := context.Background()
 
