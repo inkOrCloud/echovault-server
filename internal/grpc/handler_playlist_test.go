@@ -7,16 +7,15 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
+	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
 	evgrpc "github.com/inkOrCloud/EchoVault/echovault-server/internal/grpc"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/playlist"
-	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func newPlaylistTestServer(t *testing.T) (playlistpb.PlaylistServiceClient, func()) { //nolint:ireturn
@@ -30,7 +29,8 @@ func newPlaylistTestServer(t *testing.T) (playlistpb.PlaylistServiceClient, func
 	handler := evgrpc.NewPlaylistHandler(svc)
 	s := grpc.NewServer()
 	playlistpb.RegisterPlaylistServiceServer(s, handler)
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lc := net.ListenConfig{}
+	lis, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	go func() { _ = s.Serve(lis) }()
 	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
