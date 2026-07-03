@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
+	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/song"
-	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 )
 
 // ErrSongNotFound indicates the song was not found.
@@ -134,8 +133,8 @@ func (s *Service) ListSongs(ctx context.Context, limit, offset int) ([]*songpb.S
 // UpdateFromScan populates empty fields from scanned metadata.
 func (s *Service) UpdateFromScan(ctx context.Context, songID, title, artist, album, genre string,
 	trackNumber, discNumber, year int32,
-	fileHash, fileName, mimeType string, fileSize int64) error {
-
+	fileHash, fileName, mimeType string, fileSize int64,
+) error {
 	r, err := s.client.Song.Get(ctx, songID)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -153,7 +152,8 @@ func (s *Service) UpdateFromScan(ctx context.Context, songID, title, artist, alb
 	}
 
 	u.SetUpdatedAt(time.Now())
-	if _, err := u.Save(ctx); err != nil {
+	_, err = u.Save(ctx)
+	if err != nil {
 		return fmt.Errorf("update song: %w", err)
 	}
 	return nil
@@ -163,8 +163,8 @@ func (s *Service) UpdateFromScan(ctx context.Context, songID, title, artist, alb
 func applyMetadataIfEmpty(u *ent.SongUpdateOne, r *ent.Song,
 	title, artist, album, genre string,
 	trackNumber, discNumber, year int32,
-	fileHash, fileName, mimeType string, fileSize int64) bool {
-
+	fileHash, fileName, mimeType string, fileSize int64,
+) bool {
 	updated := false
 
 	if r.Title == "" && title != "" {
