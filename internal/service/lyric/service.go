@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	lyricpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/lyric/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/lyric"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+// ErrLyricNotFound indicates the lyric was not found.
+const typeOriginalStr = "TYPE_ORIGINAL"
 
 // ErrLyricNotFound indicates the lyric was not found.
 var ErrLyricNotFound = errors.New("lyric not found")
@@ -106,20 +107,22 @@ func (s *Service) DeleteLyric(ctx context.Context, songID string, typ lyricpb.Ly
 func typeToStr(t lyricpb.Lyric_Type) string {
 	switch t {
 	case lyricpb.Lyric_TYPE_ORIGINAL:
-		return "TYPE_ORIGINAL"
+		return typeOriginalStr
 	case lyricpb.Lyric_TYPE_TRANSLATION:
 		return "TYPE_TRANSLATION"
 	case lyricpb.Lyric_TYPE_PHONETIC:
 		return "TYPE_PHONETIC"
+	case lyricpb.Lyric_TYPE_UNSPECIFIED:
+		return typeOriginalStr
 	default:
-		return "TYPE_ORIGINAL"
+		return typeOriginalStr
 	}
 }
 
 func entToProto(r *ent.Lyric) *lyricpb.Lyric {
 	t := lyricpb.Lyric_TYPE_UNSPECIFIED
 	switch r.Type {
-	case "TYPE_ORIGINAL":
+	case typeOriginalStr:
 		t = lyricpb.Lyric_TYPE_ORIGINAL
 	case "TYPE_TRANSLATION":
 		t = lyricpb.Lyric_TYPE_TRANSLATION
