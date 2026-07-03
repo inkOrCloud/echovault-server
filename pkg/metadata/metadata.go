@@ -49,13 +49,14 @@ var extToMIME = map[string]string{
 
 // ParseFile opens the file at path and returns parsed audio metadata.
 func ParseFile(path string) (*AudioMetadata, error) {
-	f, err := os.Open(path)
+	cleanPath := filepath.Clean(path)
+	f, err := os.Open(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("metadata: open file: %w", err)
 	}
 	defer func() { _ = f.Close() }()
 
-	meta, err := ParseReader(f, path)
+	meta, err := ParseReader(f, cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("metadata: parse reader: %w", err)
 	}
@@ -81,7 +82,8 @@ func ParseReader(r io.ReadSeeker, filePath string) (*AudioMetadata, error) {
 		MIMEType: mime,
 	}
 
-	if _, err := r.Seek(0, io.SeekStart); err != nil {
+	_, seekErr := r.Seek(0, io.SeekStart)
+	if seekErr != nil {
 		return meta, nil //nolint:nilerr // return basic info, don't crash on seek error
 	}
 
