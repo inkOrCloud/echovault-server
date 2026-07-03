@@ -31,11 +31,11 @@ func (h *UserHandler) Register(ctx context.Context, req *userpb.RegisterRequest)
 		if err.Error() == "username already exists" {
 			code = codes.AlreadyExists
 		}
-		return nil, status.Error(code, err.Error())
+		return nil, status.Error(code, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	u, err := h.svc.GetUser(ctx, resp.UserID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get created user")
+		return nil, status.Error(codes.Internal, "failed to get created user") //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &userpb.RegisterResponse{
 		User:        convertUser(u),
@@ -47,11 +47,11 @@ func (h *UserHandler) Register(ctx context.Context, req *userpb.RegisterRequest)
 func (h *UserHandler) Login(ctx context.Context, req *userpb.LoginRequest) (*userpb.LoginResponse, error) {
 	resp, err := h.svc.Login(ctx, req.GetUsername(), req.GetPassword(), req.GetDeviceId())
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	u, err := h.svc.GetUser(ctx, resp.UserID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get user after login")
+		return nil, status.Error(codes.Internal, "failed to get user after login") //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &userpb.LoginResponse{
 		User:        convertUser(u),
@@ -63,11 +63,11 @@ func (h *UserHandler) Login(ctx context.Context, req *userpb.LoginRequest) (*use
 func (h *UserHandler) GetCurrentUser(ctx context.Context, _ *userpb.GetCurrentUserRequest) (*userpb.GetCurrentUserResponse, error) {
 	userID := GetUserID(ctx)
 	if userID == "" {
-		return nil, status.Error(codes.Unauthenticated, "not authenticated")
+		return nil, status.Error(codes.Unauthenticated, "not authenticated") //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	u, err := h.svc.GetUser(ctx, userID)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &userpb.GetCurrentUserResponse{User: convertUser(u)}, nil
 }
@@ -77,7 +77,7 @@ func (h *UserHandler) ListDevices(ctx context.Context, _ *userpb.ListDevicesRequ
 	userID := GetUserID(ctx)
 	devices, err := h.svc.ListDevices(ctx, userID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	pbDevices := make([]*userpb.Device, len(devices))
 	for i, d := range devices {
@@ -89,8 +89,9 @@ func (h *UserHandler) ListDevices(ctx context.Context, _ *userpb.ListDevicesRequ
 // RegisterDevice registers a new device for the authenticated user.
 func (h *UserHandler) RegisterDevice(ctx context.Context, req *userpb.RegisterDeviceRequest) (*userpb.RegisterDeviceResponse, error) {
 	userID := GetUserID(ctx)
-	if err := h.svc.RegisterDevice(ctx, userID, req.GetDeviceId(), req.GetDeviceName(), req.GetPlatform()); err != nil {
-		return nil, status.Error(codes.AlreadyExists, err.Error())
+	err := h.svc.RegisterDevice(ctx, userID, req.GetDeviceId(), req.GetDeviceName(), req.GetPlatform())
+	if err != nil {
+		return nil, status.Error(codes.AlreadyExists, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &userpb.RegisterDeviceResponse{}, nil
 }
@@ -98,8 +99,9 @@ func (h *UserHandler) RegisterDevice(ctx context.Context, req *userpb.RegisterDe
 // RemoveDevice removes a device registered for the authenticated user.
 func (h *UserHandler) RemoveDevice(ctx context.Context, req *userpb.RemoveDeviceRequest) (*userpb.RemoveDeviceResponse, error) {
 	userID := GetUserID(ctx)
-	if err := h.svc.RemoveDevice(ctx, userID, req.GetDeviceId()); err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+	err := h.svc.RemoveDevice(ctx, userID, req.GetDeviceId())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &userpb.RemoveDeviceResponse{}, nil
 }
