@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/user"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/auth"
@@ -77,7 +76,8 @@ func NewService(client *ent.Client, jwtSecret string) *Service {
 
 // Register creates a new user account.
 func (s *Service) Register(ctx context.Context, username, password, displayName string) (*RegisterResponse, error) {
-	if err := ValidatePassword(password); err != nil {
+	err := ValidatePassword(password)
+	if err != nil {
 		return nil, fmt.Errorf("validate password: %w", err)
 	}
 
