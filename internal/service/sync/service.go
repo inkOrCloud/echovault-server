@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 )
 
 // PushResponse is the result of pushing local changes.
@@ -71,7 +71,8 @@ func (s *Service) PushChanges(ctx context.Context, _ string, _ int64, changes []
 		}
 		change.Version = v
 
-		if err := s.logger.Append(ctx, change); err != nil {
+		err = s.logger.Append(ctx, change)
+		if err != nil {
 			return nil, fmt.Errorf("log change: %w", err)
 		}
 		accepted++
@@ -112,7 +113,8 @@ func (s *Service) Unsubscribe(deviceID string) {
 
 // AckChanges acknowledges receipt of changes up to a version.
 func (s *Service) AckChanges(ctx context.Context, _ string, version int64) error {
-	if err := s.logger.Ack(ctx, version); err != nil {
+	err := s.logger.Ack(ctx, version)
+	if err != nil {
 		return fmt.Errorf("ack changes: %w", err)
 	}
 	return nil
