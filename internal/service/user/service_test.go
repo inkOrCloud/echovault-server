@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
@@ -14,54 +16,45 @@ import (
 
 func newTestClient(t *testing.T) *ent.Client {
 	t.Helper()
-	drv, err := entsql.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-	if err != nil {
-		t.Fatalf("failed to open test db: %v", err)
-	}
+	name := "file:user_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
+	drv, err := entsql.Open("sqlite3", name)
+	require.NoError(t, err)
 	client := enttest.NewClient(t, enttest.WithOptions(ent.Driver(drv)))
-	if err := client.Schema.Create(context.Background()); err != nil {
-		t.Fatalf("failed to create schema: %v", err)
-	}
+	require.NoError(t, client.Schema.Create(context.Background()))
 	return client
 }
 
 func TestRegister_Success(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
 	resp, err := svc.Register(ctx, "newuser", "ValidPass1", "New User")
-	if err != nil {
-		t.Fatalf("Register() error = %v", err)
-	}
-	if resp.UserID == "" {
-		t.Error("Register() returned empty UserID")
-	}
-	if resp.Username != "newuser" {
-		t.Errorf("Register() Username = %q, want %q", resp.Username, "newuser")
-	}
-	if resp.Token == "" {
-		t.Error("Register() returned empty Token")
-	}
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.UserID)
+	require.Equal(t, "newuser", resp.Username)
+	require.NotEmpty(t, resp.Token)
 }
 
 func TestRegister_DuplicateUsername(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	svc.Register(ctx, "dupuser", "ValidPass1", "User 1")
-	_, err := svc.Register(ctx, "dupuser", "ValidPass2", "User 2")
-	if err == nil {
-		t.Fatal("Register() expected error for duplicate username")
-	}
+	_, err := svc.Register(ctx, "dupuser", "ValidPass1", "User 1")
+	require.NoError(t, err)
+	_, err = svc.Register(ctx, "dupuser", "ValidPass2", "User 2")
+	require.Error(t, err)
 }
 
 func TestRegister_WeakPassword(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
@@ -77,134 +70,123 @@ func TestRegister_WeakPassword(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := svc.Register(ctx, "user_"+tt.name, tt.password, "Test")
-			if err == nil {
-				t.Errorf("Register() with password %q expected error", tt.password)
-			}
+			require.Error(t, err)
 		})
 	}
 }
 
 func TestLogin_Success(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	svc.Register(ctx, "loginuser", "MyPass123", "Login User")
+	_, err := svc.Register(ctx, "loginuser", "MyPass123", "Login User")
+	require.NoError(t, err)
 	resp, err := svc.Login(ctx, "loginuser", "MyPass123", "device-001")
-	if err != nil {
-		t.Fatalf("Login() error = %v", err)
-	}
-	if resp.Token == "" {
-		t.Error("Login() returned empty token")
-	}
-	if resp.UserID == "" {
-		t.Error("Login() returned empty UserID")
-	}
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.Token)
+	require.NotEmpty(t, resp.UserID)
 }
 
 func TestLogin_WrongPassword(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	svc.Register(ctx, "userx", "CorrectPass1", "User X")
-	_, err := svc.Login(ctx, "userx", "WrongPass1", "device-002")
-	if err == nil {
-		t.Fatal("Login() expected error for wrong password")
-	}
+	_, err := svc.Register(ctx, "userx", "CorrectPass1", "User X")
+	require.NoError(t, err)
+	_, err = svc.Login(ctx, "userx", "WrongPass1", "device-002")
+	require.Error(t, err)
 }
 
 func TestLogin_UserNotFound(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 
 	_, err := svc.Login(context.Background(), "nouser", "SomePass1", "device-003")
-	if err == nil {
-		t.Fatal("Login() expected error for nonexistent user")
-	}
+	require.Error(t, err)
 }
 
 func TestGetUser_Success(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	regResp, _ := svc.Register(ctx, "getme", "GetMePass1", "Get Me")
+	regResp, err := svc.Register(ctx, "getme", "GetMePass1", "Get Me")
+	require.NoError(t, err)
 	u, err := svc.GetUser(ctx, regResp.UserID)
-	if err != nil {
-		t.Fatalf("GetUser() error = %v", err)
-	}
-	if u.Username != "getme" {
-		t.Errorf("GetUser() Username = %q, want %q", u.Username, "getme")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "getme", u.Username)
 }
 
 func TestRegisterDevice_Success(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	reg, _ := svc.Register(ctx, "deviceuser", "DevicePass1", "Device User")
-	err := svc.RegisterDevice(ctx, reg.UserID, "dev-001", "My Desktop", "linux")
-	if err != nil {
-		t.Fatalf("RegisterDevice() error = %v", err)
-	}
+	reg, err := svc.Register(ctx, "deviceuser", "DevicePass1", "Device User")
+	require.NoError(t, err)
+	err = svc.RegisterDevice(ctx, reg.UserID, "dev-001", "My Desktop", "linux")
+	require.NoError(t, err)
 }
 
 func TestRegisterDevice_DuplicateID(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	reg, _ := svc.Register(ctx, "dupdev", "DupDevPass1", "Dup Device")
-	svc.RegisterDevice(ctx, reg.UserID, "dev-001", "First", "linux")
-	err := svc.RegisterDevice(ctx, reg.UserID, "dev-001", "Second", "macos")
-	if err == nil {
-		t.Fatal("RegisterDevice() expected error for duplicate device ID")
-	}
+	reg, err := svc.Register(ctx, "dupdev", "DupDevPass1", "Dup Device")
+	require.NoError(t, err)
+	err = svc.RegisterDevice(ctx, reg.UserID, "dev-001", "First", "linux")
+	require.NoError(t, err)
+	err = svc.RegisterDevice(ctx, reg.UserID, "dev-001", "Second", "macos")
+	require.Error(t, err)
 }
 
 func TestListDevices(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	reg, _ := svc.Register(ctx, "listdev", "ListDevP1", "List Dev")
-	svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
-	svc.RegisterDevice(ctx, reg.UserID, "d2", "Phone", "android")
+	reg, err := svc.Register(ctx, "listdev", "ListDevP1", "List Dev")
+	require.NoError(t, err)
+	_ = svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
+	_ = svc.RegisterDevice(ctx, reg.UserID, "d2", "Phone", "android")
 
 	devices, err := svc.ListDevices(ctx, reg.UserID)
-	if err != nil {
-		t.Fatalf("ListDevices() error = %v", err)
-	}
-	if len(devices) != 2 {
-		t.Errorf("ListDevices() count = %d, want 2", len(devices))
-	}
+	require.NoError(t, err)
+	require.Len(t, devices, 2)
 }
 
 func TestRemoveDevice(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := user.NewService(client, "test-secret")
 	ctx := context.Background()
 
-	reg, _ := svc.Register(ctx, "rmdev", "RmDevPass1", "Rm Dev")
-	svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
-	err := svc.RemoveDevice(ctx, reg.UserID, "d1")
-	if err != nil {
-		t.Fatalf("RemoveDevice() error = %v", err)
-	}
+	reg, err := svc.Register(ctx, "rmdev", "RmDevPass1", "Rm Dev")
+	require.NoError(t, err)
+	_ = svc.RegisterDevice(ctx, reg.UserID, "d1", "Desktop", "linux")
+	err = svc.RemoveDevice(ctx, reg.UserID, "d1")
+	require.NoError(t, err)
 
 	devices, _ := svc.ListDevices(ctx, reg.UserID)
-	if len(devices) != 0 {
-		t.Errorf("After RemoveDevice, count = %d, want 0", len(devices))
-	}
+	require.Empty(t, devices)
 }

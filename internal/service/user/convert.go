@@ -1,3 +1,4 @@
+// Package user provides user management operations.
 package user
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+// EntToProto converts an ent User to a proto User.
 func EntToProto(u *ent.User) *userpb.User {
 	if u == nil {
 		return nil
@@ -20,6 +22,7 @@ func EntToProto(u *ent.User) *userpb.User {
 	}
 }
 
+// EntDeviceToProto converts an ent Device to a proto Device.
 func EntDeviceToProto(d *ent.Device) *userpb.Device {
 	if d == nil {
 		return nil
