@@ -1,7 +1,9 @@
+// Package grpc provides gRPC server handlers and interceptors for EchoVault.
 package grpc
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/auth"
@@ -18,18 +20,32 @@ const (
 	ctxKeyDeviceID ctxKey = "device_id"
 )
 
+// GetUserID returns the user ID from the context.
 func GetUserID(ctx context.Context) string {
-	v, _ := ctx.Value(ctxKeyUserID).(string)
+	v, ok := ctx.Value(ctxKeyUserID).(string)
+	if !ok {
+		return ""
+	}
 	return v
 }
 
+// GetDeviceID returns the device ID from the context.
 func GetDeviceID(ctx context.Context) string {
-	v, _ := ctx.Value(ctxKeyDeviceID).(string)
+	v, ok := ctx.Value(ctxKeyDeviceID).(string)
+	if !ok {
+		return ""
+	}
 	return v
 }
 
+// AuthInterceptor returns a unary server interceptor that validates JWT tokens.
 func AuthInterceptor(secret string) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(
+		ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (any, error) {
 		if isPublicRPC(info.FullMethod) {
 			return handler(ctx, req)
 		}
@@ -61,10 +77,5 @@ func isPublicRPC(method string) bool {
 		"/echo_vault.user.v1.UserService/Login",
 		"/echo_vault.user.v1.UserService/GetServerInfo",
 	}
-	for _, p := range public {
-		if method == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(public, method)
 }

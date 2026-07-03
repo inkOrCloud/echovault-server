@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// RegisterAll registers all gRPC service handlers on the server.
 func RegisterAll(s *grpc.Server, client *ent.Client, jwtSecret string) {
 	userSvc := user.NewService(client, jwtSecret)
 	userpb.RegisterUserServiceServer(s, NewUserHandler(userSvc))

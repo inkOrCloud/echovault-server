@@ -3,25 +3,31 @@ package grpc
 import (
 	"context"
 
+	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
-	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+const defaultPullBatchSize = 100
+
+// SyncHandler implements the SyncService gRPC server.
 type SyncHandler struct {
 	syncpb.UnimplementedSyncServiceServer
+
 	svc *sync.Service
 }
 
+// NewSyncHandler creates a new SyncHandler.
 func NewSyncHandler(svc *sync.Service) *SyncHandler {
 	return &SyncHandler{svc: svc}
 }
 
+// PushChanges pushes device changes to the server.
 func (h *SyncHandler) PushChanges(ctx context.Context, req *syncpb.PushChangesRequest) (*syncpb.PushChangesResponse, error) {
-	resp, err := h.svc.PushChanges(ctx, req.DeviceId, req.LastPullVersion, req.Changes)
+	resp, err := h.svc.PushChanges(ctx, req.GetDeviceId(), req.GetLastPullVersion(), req.GetChanges())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -42,14 +48,15 @@ func (h *SyncHandler) PushChanges(ctx context.Context, req *syncpb.PushChangesRe
 	}
 
 	return &syncpb.PushChangesResponse{
-		ServerVersion:  resp.ServerVersion,
-		AcceptedCount:  resp.AcceptedCount,
-		Conflicts:      pbConflicts,
+		ServerVersion: resp.ServerVersion,
+		AcceptedCount: resp.AcceptedCount,
+		Conflicts:     pbConflicts,
 	}, nil
 }
 
+// PullChanges streams changes from the server to the client.
 func (h *SyncHandler) PullChanges(req *syncpb.PullChangesRequest, stream syncpb.SyncService_PullChangesServer) error {
-	changes, err := h.svc.PullChanges(stream.Context(), req.DeviceId, req.SinceVersion, 100)
+	changes, err := h.svc.PullChanges(stream.Context(), req.GetDeviceId(), req.GetSinceVersion(), defaultPullBatchSize)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -63,9 +70,10 @@ func (h *SyncHandler) PullChanges(req *syncpb.PullChangesRequest, stream syncpb.
 	return nil
 }
 
+// SubscribeChanges streams real-time change notifications to the client.
 func (h *SyncHandler) SubscribeChanges(req *syncpb.SubscribeChangesRequest, stream syncpb.SyncService_SubscribeChangesServer) error {
-	ch := h.svc.Subscribe(req.DeviceId)
-	defer h.svc.Unsubscribe(req.DeviceId)
+	ch := h.svc.Subscribe(req.GetDeviceId())
+	defer h.svc.Unsubscribe(req.GetDeviceId())
 
 	for {
 		select {
@@ -84,8 +92,9 @@ func (h *SyncHandler) SubscribeChanges(req *syncpb.SubscribeChangesRequest, stre
 	}
 }
 
+// AckChanges acknowledges receipt of changes up to a given version.
 func (h *SyncHandler) AckChanges(ctx context.Context, req *syncpb.AckChangesRequest) (*syncpb.AckChangesResponse, error) {
-	if err := h.svc.AckChanges(ctx, req.DeviceId, req.AckedVersion); err != nil {
+	if err := h.svc.AckChanges(ctx, req.GetDeviceId(), req.GetAckedVersion()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &syncpb.AckChangesResponse{}, nil
