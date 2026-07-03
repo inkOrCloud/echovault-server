@@ -29,7 +29,7 @@ func NewSyncHandler(svc *sync.Service) *SyncHandler {
 func (h *SyncHandler) PushChanges(ctx context.Context, req *syncpb.PushChangesRequest) (*syncpb.PushChangesResponse, error) {
 	resp, err := h.svc.PushChanges(ctx, req.GetDeviceId(), req.GetLastPullVersion(), req.GetChanges())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 
 	pbConflicts := make([]*syncpb.ConflictInfo, len(resp.Conflicts))
@@ -58,13 +58,14 @@ func (h *SyncHandler) PushChanges(ctx context.Context, req *syncpb.PushChangesRe
 func (h *SyncHandler) PullChanges(req *syncpb.PullChangesRequest, stream syncpb.SyncService_PullChangesServer) error {
 	changes, err := h.svc.PullChanges(stream.Context(), req.GetDeviceId(), req.GetSinceVersion(), defaultPullBatchSize)
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 
 	for _, change := range changes {
 		pbChange := syncEntToProto(change)
-		if err := stream.Send(&syncpb.PullChangesResponse{Change: pbChange}); err != nil {
-			return err
+		err := stream.Send(&syncpb.PullChangesResponse{Change: pbChange})
+		if err != nil {
+			return err //nolint:wrapcheck // gRPC stream errors are propagated directly
 		}
 	}
 	return nil
@@ -81,10 +82,11 @@ func (h *SyncHandler) SubscribeChanges(req *syncpb.SubscribeChangesRequest, stre
 			if !ok {
 				return nil
 			}
-			if err := stream.Send(&syncpb.SubscribeChangesResponse{
+			err := stream.Send(&syncpb.SubscribeChangesResponse{
 				Notification: notif,
-			}); err != nil {
-				return err
+			})
+			if err != nil {
+				return err //nolint:wrapcheck // gRPC stream errors are propagated directly
 			}
 		case <-stream.Context().Done():
 			return nil
@@ -94,8 +96,9 @@ func (h *SyncHandler) SubscribeChanges(req *syncpb.SubscribeChangesRequest, stre
 
 // AckChanges acknowledges receipt of changes up to a given version.
 func (h *SyncHandler) AckChanges(ctx context.Context, req *syncpb.AckChangesRequest) (*syncpb.AckChangesResponse, error) {
-	if err := h.svc.AckChanges(ctx, req.GetDeviceId(), req.GetAckedVersion()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	err := h.svc.AckChanges(ctx, req.GetDeviceId(), req.GetAckedVersion())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &syncpb.AckChangesResponse{}, nil
 }
