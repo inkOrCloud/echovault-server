@@ -54,20 +54,6 @@ func (_c *PlaylistCreate) SetNillableCoverURL(v *string) *PlaylistCreate {
 	return _c
 }
 
-// SetType sets the "type" field.
-func (_c *PlaylistCreate) SetType(v string) *PlaylistCreate {
-	_c.mutation.SetType(v)
-	return _c
-}
-
-// SetNillableType sets the "type" field if the given value is not nil.
-func (_c *PlaylistCreate) SetNillableType(v *string) *PlaylistCreate {
-	if v != nil {
-		_c.SetType(*v)
-	}
-	return _c
-}
-
 // SetOwnerID sets the "owner_id" field.
 func (_c *PlaylistCreate) SetOwnerID(v string) *PlaylistCreate {
 	_c.mutation.SetOwnerID(v)
@@ -89,29 +75,15 @@ func (_c *PlaylistCreate) SetNillableIsPublic(v *bool) *PlaylistCreate {
 }
 
 // SetSongCount sets the "song_count" field.
-func (_c *PlaylistCreate) SetSongCount(v int32) *PlaylistCreate {
+func (_c *PlaylistCreate) SetSongCount(v int) *PlaylistCreate {
 	_c.mutation.SetSongCount(v)
 	return _c
 }
 
 // SetNillableSongCount sets the "song_count" field if the given value is not nil.
-func (_c *PlaylistCreate) SetNillableSongCount(v *int32) *PlaylistCreate {
+func (_c *PlaylistCreate) SetNillableSongCount(v *int) *PlaylistCreate {
 	if v != nil {
 		_c.SetSongCount(*v)
-	}
-	return _c
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (_c *PlaylistCreate) SetIsDeleted(v bool) *PlaylistCreate {
-	_c.mutation.SetIsDeleted(v)
-	return _c
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_c *PlaylistCreate) SetNillableIsDeleted(v *bool) *PlaylistCreate {
-	if v != nil {
-		_c.SetIsDeleted(*v)
 	}
 	return _c
 }
@@ -191,10 +163,6 @@ func (_c *PlaylistCreate) defaults() {
 		v := playlist.DefaultCoverURL
 		_c.mutation.SetCoverURL(v)
 	}
-	if _, ok := _c.mutation.GetType(); !ok {
-		v := playlist.DefaultType
-		_c.mutation.SetType(v)
-	}
 	if _, ok := _c.mutation.IsPublic(); !ok {
 		v := playlist.DefaultIsPublic
 		_c.mutation.SetIsPublic(v)
@@ -202,10 +170,6 @@ func (_c *PlaylistCreate) defaults() {
 	if _, ok := _c.mutation.SongCount(); !ok {
 		v := playlist.DefaultSongCount
 		_c.mutation.SetSongCount(v)
-	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		v := playlist.DefaultIsDeleted
-		_c.mutation.SetIsDeleted(v)
 	}
 	if _, ok := _c.mutation.Version(); !ok {
 		v := playlist.DefaultVersion
@@ -234,9 +198,6 @@ func (_c *PlaylistCreate) check() error {
 	if _, ok := _c.mutation.CoverURL(); !ok {
 		return &ValidationError{Name: "cover_url", err: errors.New(`ent: missing required field "Playlist.cover_url"`)}
 	}
-	if _, ok := _c.mutation.GetType(); !ok {
-		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Playlist.type"`)}
-	}
 	if _, ok := _c.mutation.OwnerID(); !ok {
 		return &ValidationError{Name: "owner_id", err: errors.New(`ent: missing required field "Playlist.owner_id"`)}
 	}
@@ -245,9 +206,6 @@ func (_c *PlaylistCreate) check() error {
 	}
 	if _, ok := _c.mutation.SongCount(); !ok {
 		return &ValidationError{Name: "song_count", err: errors.New(`ent: missing required field "Playlist.song_count"`)}
-	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		return &ValidationError{Name: "is_deleted", err: errors.New(`ent: missing required field "Playlist.is_deleted"`)}
 	}
 	if _, ok := _c.mutation.Version(); !ok {
 		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Playlist.version"`)}
@@ -305,10 +263,6 @@ func (_c *PlaylistCreate) createSpec() (*Playlist, *sqlgraph.CreateSpec) {
 		_spec.SetField(playlist.FieldCoverURL, field.TypeString, value)
 		_node.CoverURL = value
 	}
-	if value, ok := _c.mutation.GetType(); ok {
-		_spec.SetField(playlist.FieldType, field.TypeString, value)
-		_node.Type = value
-	}
 	if value, ok := _c.mutation.OwnerID(); ok {
 		_spec.SetField(playlist.FieldOwnerID, field.TypeString, value)
 		_node.OwnerID = value
@@ -318,12 +272,8 @@ func (_c *PlaylistCreate) createSpec() (*Playlist, *sqlgraph.CreateSpec) {
 		_node.IsPublic = value
 	}
 	if value, ok := _c.mutation.SongCount(); ok {
-		_spec.SetField(playlist.FieldSongCount, field.TypeInt32, value)
+		_spec.SetField(playlist.FieldSongCount, field.TypeInt, value)
 		_node.SongCount = value
-	}
-	if value, ok := _c.mutation.IsDeleted(); ok {
-		_spec.SetField(playlist.FieldIsDeleted, field.TypeBool, value)
-		_node.IsDeleted = value
 	}
 	if value, ok := _c.mutation.Version(); ok {
 		_spec.SetField(playlist.FieldVersion, field.TypeInt64, value)

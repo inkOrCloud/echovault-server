@@ -45,10 +45,10 @@ const (
 	FieldFileStatus = "file_status"
 	// FieldOwnerID holds the string denoting the owner_id field in the database.
 	FieldOwnerID = "owner_id"
-	// FieldIsDeleted holds the string denoting the is_deleted field in the database.
-	FieldIsDeleted = "is_deleted"
 	// FieldVersion holds the string denoting the version field in the database.
 	FieldVersion = "version"
+	// FieldIsDeleted holds the string denoting the is_deleted field in the database.
+	FieldIsDeleted = "is_deleted"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -77,8 +77,8 @@ var Columns = []string{
 	FieldSource,
 	FieldFileStatus,
 	FieldOwnerID,
-	FieldIsDeleted,
 	FieldVersion,
+	FieldIsDeleted,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -140,10 +140,10 @@ var (
 	DefaultFileStatus string
 	// DefaultOwnerID holds the default value on creation for the "owner_id" field.
 	DefaultOwnerID string
-	// DefaultIsDeleted holds the default value on creation for the "is_deleted" field.
-	DefaultIsDeleted bool
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int64
+	// DefaultIsDeleted holds the default value on creation for the "is_deleted" field.
+	DefaultIsDeleted bool
 )
 
 // OrderOption defines the ordering options for the Song queries.
@@ -239,14 +239,14 @@ func ByOwnerID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOwnerID, opts...).ToFunc()
 }
 
-// ByIsDeleted orders the results by the is_deleted field.
-func ByIsDeleted(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsDeleted, opts...).ToFunc()
-}
-
 // ByVersion orders the results by the version field.
 func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVersion, opts...).ToFunc()
+}
+
+// ByIsDeleted orders the results by the is_deleted field.
+func ByIsDeleted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsDeleted, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

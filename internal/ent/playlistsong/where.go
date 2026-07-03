@@ -84,14 +84,9 @@ func AddedBy(v string) predicate.PlaylistSong {
 	return predicate.PlaylistSong(sql.FieldEQ(FieldAddedBy, v))
 }
 
-// Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
-func Version(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldEQ(FieldVersion, v))
-}
-
-// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
-func CreatedAt(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldEQ(FieldCreatedAt, v))
+// AddedAt applies equality check predicate on the "added_at" field. It's identical to AddedAtEQ.
+func AddedAt(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldEQ(FieldAddedAt, v))
 }
 
 // PlaylistIDEQ applies the EQ predicate on the "playlist_id" field.
@@ -329,84 +324,44 @@ func AddedByContainsFold(v string) predicate.PlaylistSong {
 	return predicate.PlaylistSong(sql.FieldContainsFold(FieldAddedBy, v))
 }
 
-// VersionEQ applies the EQ predicate on the "version" field.
-func VersionEQ(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldEQ(FieldVersion, v))
+// AddedAtEQ applies the EQ predicate on the "added_at" field.
+func AddedAtEQ(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldEQ(FieldAddedAt, v))
 }
 
-// VersionNEQ applies the NEQ predicate on the "version" field.
-func VersionNEQ(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldNEQ(FieldVersion, v))
+// AddedAtNEQ applies the NEQ predicate on the "added_at" field.
+func AddedAtNEQ(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldNEQ(FieldAddedAt, v))
 }
 
-// VersionIn applies the In predicate on the "version" field.
-func VersionIn(vs ...int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldIn(FieldVersion, vs...))
+// AddedAtIn applies the In predicate on the "added_at" field.
+func AddedAtIn(vs ...time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldIn(FieldAddedAt, vs...))
 }
 
-// VersionNotIn applies the NotIn predicate on the "version" field.
-func VersionNotIn(vs ...int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldNotIn(FieldVersion, vs...))
+// AddedAtNotIn applies the NotIn predicate on the "added_at" field.
+func AddedAtNotIn(vs ...time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldNotIn(FieldAddedAt, vs...))
 }
 
-// VersionGT applies the GT predicate on the "version" field.
-func VersionGT(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldGT(FieldVersion, v))
+// AddedAtGT applies the GT predicate on the "added_at" field.
+func AddedAtGT(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldGT(FieldAddedAt, v))
 }
 
-// VersionGTE applies the GTE predicate on the "version" field.
-func VersionGTE(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldGTE(FieldVersion, v))
+// AddedAtGTE applies the GTE predicate on the "added_at" field.
+func AddedAtGTE(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldGTE(FieldAddedAt, v))
 }
 
-// VersionLT applies the LT predicate on the "version" field.
-func VersionLT(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldLT(FieldVersion, v))
+// AddedAtLT applies the LT predicate on the "added_at" field.
+func AddedAtLT(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldLT(FieldAddedAt, v))
 }
 
-// VersionLTE applies the LTE predicate on the "version" field.
-func VersionLTE(v int64) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldLTE(FieldVersion, v))
-}
-
-// CreatedAtEQ applies the EQ predicate on the "created_at" field.
-func CreatedAtEQ(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldEQ(FieldCreatedAt, v))
-}
-
-// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
-func CreatedAtNEQ(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldNEQ(FieldCreatedAt, v))
-}
-
-// CreatedAtIn applies the In predicate on the "created_at" field.
-func CreatedAtIn(vs ...time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldIn(FieldCreatedAt, vs...))
-}
-
-// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
-func CreatedAtNotIn(vs ...time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldNotIn(FieldCreatedAt, vs...))
-}
-
-// CreatedAtGT applies the GT predicate on the "created_at" field.
-func CreatedAtGT(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldGT(FieldCreatedAt, v))
-}
-
-// CreatedAtGTE applies the GTE predicate on the "created_at" field.
-func CreatedAtGTE(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldGTE(FieldCreatedAt, v))
-}
-
-// CreatedAtLT applies the LT predicate on the "created_at" field.
-func CreatedAtLT(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldLT(FieldCreatedAt, v))
-}
-
-// CreatedAtLTE applies the LTE predicate on the "created_at" field.
-func CreatedAtLTE(v time.Time) predicate.PlaylistSong {
-	return predicate.PlaylistSong(sql.FieldLTE(FieldCreatedAt, v))
+// AddedAtLTE applies the LTE predicate on the "added_at" field.
+func AddedAtLTE(v time.Time) predicate.PlaylistSong {
+	return predicate.PlaylistSong(sql.FieldLTE(FieldAddedAt, v))
 }
 
 // And groups predicates with the AND operator between them.

@@ -84,41 +84,6 @@ func (_u *UserUpdate) SetNillableRole(v *string) *UserUpdate {
 	return _u
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *UserUpdate) SetIsDeleted(v bool) *UserUpdate {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableIsDeleted(v *bool) *UserUpdate {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
-	return _u
-}
-
-// SetVersion sets the "version" field.
-func (_u *UserUpdate) SetVersion(v int64) *UserUpdate {
-	_u.mutation.ResetVersion()
-	_u.mutation.SetVersion(v)
-	return _u
-}
-
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableVersion(v *int64) *UserUpdate {
-	if v != nil {
-		_u.SetVersion(*v)
-	}
-	return _u
-}
-
-// AddVersion adds value to the "version" field.
-func (_u *UserUpdate) AddVersion(v int64) *UserUpdate {
-	_u.mutation.AddVersion(v)
-	return _u
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (_u *UserUpdate) SetCreatedAt(v time.Time) *UserUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -218,15 +183,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(user.FieldIsDeleted, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Version(); ok {
-		_spec.SetField(user.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedVersion(); ok {
-		_spec.AddField(user.FieldVersion, field.TypeInt64, value)
-	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
 	}
@@ -306,41 +262,6 @@ func (_u *UserUpdateOne) SetNillableRole(v *string) *UserUpdateOne {
 	if v != nil {
 		_u.SetRole(*v)
 	}
-	return _u
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *UserUpdateOne) SetIsDeleted(v bool) *UserUpdateOne {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableIsDeleted(v *bool) *UserUpdateOne {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
-	return _u
-}
-
-// SetVersion sets the "version" field.
-func (_u *UserUpdateOne) SetVersion(v int64) *UserUpdateOne {
-	_u.mutation.ResetVersion()
-	_u.mutation.SetVersion(v)
-	return _u
-}
-
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableVersion(v *int64) *UserUpdateOne {
-	if v != nil {
-		_u.SetVersion(*v)
-	}
-	return _u
-}
-
-// AddVersion adds value to the "version" field.
-func (_u *UserUpdateOne) AddVersion(v int64) *UserUpdateOne {
-	_u.mutation.AddVersion(v)
 	return _u
 }
 
@@ -472,15 +393,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(user.FieldIsDeleted, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Version(); ok {
-		_spec.SetField(user.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedVersion(); ok {
-		_spec.AddField(user.FieldVersion, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)

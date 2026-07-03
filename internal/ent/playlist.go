@@ -23,16 +23,12 @@ type Playlist struct {
 	Description string `json:"description,omitempty"`
 	// CoverURL holds the value of the "cover_url" field.
 	CoverURL string `json:"cover_url,omitempty"`
-	// Type holds the value of the "type" field.
-	Type string `json:"type,omitempty"`
 	// OwnerID holds the value of the "owner_id" field.
 	OwnerID string `json:"owner_id,omitempty"`
 	// IsPublic holds the value of the "is_public" field.
 	IsPublic bool `json:"is_public,omitempty"`
 	// SongCount holds the value of the "song_count" field.
-	SongCount int32 `json:"song_count,omitempty"`
-	// IsDeleted holds the value of the "is_deleted" field.
-	IsDeleted bool `json:"is_deleted,omitempty"`
+	SongCount int `json:"song_count,omitempty"`
 	// Version holds the value of the "version" field.
 	Version int64 `json:"version,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -47,11 +43,11 @@ func (*Playlist) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case playlist.FieldIsPublic, playlist.FieldIsDeleted:
+		case playlist.FieldIsPublic:
 			values[i] = new(sql.NullBool)
 		case playlist.FieldSongCount, playlist.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case playlist.FieldID, playlist.FieldName, playlist.FieldDescription, playlist.FieldCoverURL, playlist.FieldType, playlist.FieldOwnerID:
+		case playlist.FieldID, playlist.FieldName, playlist.FieldDescription, playlist.FieldCoverURL, playlist.FieldOwnerID:
 			values[i] = new(sql.NullString)
 		case playlist.FieldCreatedAt, playlist.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -94,12 +90,6 @@ func (_m *Playlist) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CoverURL = value.String
 			}
-		case playlist.FieldType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field type", values[i])
-			} else if value.Valid {
-				_m.Type = value.String
-			}
 		case playlist.FieldOwnerID:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
@@ -116,13 +106,7 @@ func (_m *Playlist) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field song_count", values[i])
 			} else if value.Valid {
-				_m.SongCount = int32(value.Int64)
-			}
-		case playlist.FieldIsDeleted:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_deleted", values[i])
-			} else if value.Valid {
-				_m.IsDeleted = value.Bool
+				_m.SongCount = int(value.Int64)
 			}
 		case playlist.FieldVersion:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -187,9 +171,6 @@ func (_m *Playlist) String() string {
 	builder.WriteString("cover_url=")
 	builder.WriteString(_m.CoverURL)
 	builder.WriteString(", ")
-	builder.WriteString("type=")
-	builder.WriteString(_m.Type)
-	builder.WriteString(", ")
 	builder.WriteString("owner_id=")
 	builder.WriteString(_m.OwnerID)
 	builder.WriteString(", ")
@@ -198,9 +179,6 @@ func (_m *Playlist) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("song_count=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SongCount))
-	builder.WriteString(", ")
-	builder.WriteString("is_deleted=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsDeleted))
 	builder.WriteString(", ")
 	builder.WriteString("version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Version))

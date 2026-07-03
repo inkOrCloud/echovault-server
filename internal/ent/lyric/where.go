@@ -94,11 +94,6 @@ func Source(v string) predicate.Lyric {
 	return predicate.Lyric(sql.FieldEQ(FieldSource, v))
 }
 
-// IsDeleted applies equality check predicate on the "is_deleted" field. It's identical to IsDeletedEQ.
-func IsDeleted(v bool) predicate.Lyric {
-	return predicate.Lyric(sql.FieldEQ(FieldIsDeleted, v))
-}
-
 // Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
 func Version(v int64) predicate.Lyric {
 	return predicate.Lyric(sql.FieldEQ(FieldVersion, v))
@@ -477,16 +472,6 @@ func SourceEqualFold(v string) predicate.Lyric {
 // SourceContainsFold applies the ContainsFold predicate on the "source" field.
 func SourceContainsFold(v string) predicate.Lyric {
 	return predicate.Lyric(sql.FieldContainsFold(FieldSource, v))
-}
-
-// IsDeletedEQ applies the EQ predicate on the "is_deleted" field.
-func IsDeletedEQ(v bool) predicate.Lyric {
-	return predicate.Lyric(sql.FieldEQ(FieldIsDeleted, v))
-}
-
-// IsDeletedNEQ applies the NEQ predicate on the "is_deleted" field.
-func IsDeletedNEQ(v bool) predicate.Lyric {
-	return predicate.Lyric(sql.FieldNEQ(FieldIsDeleted, v))
 }
 
 // VersionEQ applies the EQ predicate on the "version" field.

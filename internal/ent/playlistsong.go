@@ -25,10 +25,8 @@ type PlaylistSong struct {
 	Position int32 `json:"position,omitempty"`
 	// AddedBy holds the value of the "added_by" field.
 	AddedBy string `json:"added_by,omitempty"`
-	// Version holds the value of the "version" field.
-	Version int64 `json:"version,omitempty"`
-	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	// AddedAt holds the value of the "added_at" field.
+	AddedAt      time.Time `json:"added_at,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -37,11 +35,11 @@ func (*PlaylistSong) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case playlistsong.FieldPosition, playlistsong.FieldVersion:
+		case playlistsong.FieldPosition:
 			values[i] = new(sql.NullInt64)
 		case playlistsong.FieldID, playlistsong.FieldPlaylistID, playlistsong.FieldSongID, playlistsong.FieldAddedBy:
 			values[i] = new(sql.NullString)
-		case playlistsong.FieldCreatedAt:
+		case playlistsong.FieldAddedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -88,17 +86,11 @@ func (_m *PlaylistSong) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AddedBy = value.String
 			}
-		case playlistsong.FieldVersion:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field version", values[i])
-			} else if value.Valid {
-				_m.Version = value.Int64
-			}
-		case playlistsong.FieldCreatedAt:
+		case playlistsong.FieldAddedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+				return fmt.Errorf("unexpected type %T for field added_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				_m.AddedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -148,11 +140,8 @@ func (_m *PlaylistSong) String() string {
 	builder.WriteString("added_by=")
 	builder.WriteString(_m.AddedBy)
 	builder.WriteString(", ")
-	builder.WriteString("version=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Version))
-	builder.WriteString(", ")
-	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString("added_at=")
+	builder.WriteString(_m.AddedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

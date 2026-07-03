@@ -24,21 +24,26 @@ type Song struct {
 // Fields returns the Song fields.
 func (Song) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").Immutable().Unique(),
 		field.String("title").MaxLen(songTitleMaxLen),
 		field.String("artist").MaxLen(songArtistMaxLen).Default(""),
 		field.String("album").MaxLen(songAlbumMaxLen).Default(""),
 		field.String("genre").MaxLen(songGenreMaxLen).Default(""),
 		field.Int32("track_number").Default(0),
 		field.Int32("disc_number").Default(1),
+		field.Int32("duration_ms").Default(0),
 		field.Int32("year").Default(0),
 		field.String("file_name").MaxLen(songFileNameMaxLen).Default(""),
 		field.Int64("file_size").Default(0),
 		field.String("file_hash").MaxLen(songFileHashMaxLen).Default(""),
 		field.String("mime_type").MaxLen(songMimeMaxLen).Default(""),
+		field.Int32("bitrate").Default(0),
+		field.Int32("sample_rate").Default(0),
 		field.String("source").Default("local"),
 		field.String("file_status").Default("local_only"),
-		field.Bool("is_deleted").Default(false),
+		field.String("owner_id").Default(""),
 		field.Int64("version").Default(1),
+		field.Bool("is_deleted").Default(false),
 		field.Time("created_at"),
 		field.Time("updated_at"),
 	}
@@ -48,6 +53,6 @@ func (Song) Fields() []ent.Field {
 func (Song) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("file_hash"),
-		index.Fields("user_id"),
+		index.Fields("owner_id"),
 	}
 }

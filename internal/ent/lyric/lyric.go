@@ -23,8 +23,6 @@ const (
 	FieldOffsetMs = "offset_ms"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
-	// FieldIsDeleted holds the string denoting the is_deleted field in the database.
-	FieldIsDeleted = "is_deleted"
 	// FieldVersion holds the string denoting the version field in the database.
 	FieldVersion = "version"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -44,7 +42,6 @@ var Columns = []string{
 	FieldLanguage,
 	FieldOffsetMs,
 	FieldSource,
-	FieldIsDeleted,
 	FieldVersion,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -69,8 +66,6 @@ var (
 	DefaultOffsetMs int32
 	// DefaultSource holds the default value on creation for the "source" field.
 	DefaultSource string
-	// DefaultIsDeleted holds the default value on creation for the "is_deleted" field.
-	DefaultIsDeleted bool
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int64
 )
@@ -111,11 +106,6 @@ func ByOffsetMs(opts ...sql.OrderTermOption) OrderOption {
 // BySource orders the results by the source field.
 func BySource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSource, opts...).ToFunc()
-}
-
-// ByIsDeleted orders the results by the is_deleted field.
-func ByIsDeleted(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsDeleted, opts...).ToFunc()
 }
 
 // ByVersion orders the results by the version field.

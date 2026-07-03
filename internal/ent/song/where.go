@@ -149,14 +149,14 @@ func OwnerID(v string) predicate.Song {
 	return predicate.Song(sql.FieldEQ(FieldOwnerID, v))
 }
 
-// IsDeleted applies equality check predicate on the "is_deleted" field. It's identical to IsDeletedEQ.
-func IsDeleted(v bool) predicate.Song {
-	return predicate.Song(sql.FieldEQ(FieldIsDeleted, v))
-}
-
 // Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
 func Version(v int64) predicate.Song {
 	return predicate.Song(sql.FieldEQ(FieldVersion, v))
+}
+
+// IsDeleted applies equality check predicate on the "is_deleted" field. It's identical to IsDeletedEQ.
+func IsDeleted(v bool) predicate.Song {
+	return predicate.Song(sql.FieldEQ(FieldIsDeleted, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -1099,16 +1099,6 @@ func OwnerIDContainsFold(v string) predicate.Song {
 	return predicate.Song(sql.FieldContainsFold(FieldOwnerID, v))
 }
 
-// IsDeletedEQ applies the EQ predicate on the "is_deleted" field.
-func IsDeletedEQ(v bool) predicate.Song {
-	return predicate.Song(sql.FieldEQ(FieldIsDeleted, v))
-}
-
-// IsDeletedNEQ applies the NEQ predicate on the "is_deleted" field.
-func IsDeletedNEQ(v bool) predicate.Song {
-	return predicate.Song(sql.FieldNEQ(FieldIsDeleted, v))
-}
-
 // VersionEQ applies the EQ predicate on the "version" field.
 func VersionEQ(v int64) predicate.Song {
 	return predicate.Song(sql.FieldEQ(FieldVersion, v))
@@ -1147,6 +1137,16 @@ func VersionLT(v int64) predicate.Song {
 // VersionLTE applies the LTE predicate on the "version" field.
 func VersionLTE(v int64) predicate.Song {
 	return predicate.Song(sql.FieldLTE(FieldVersion, v))
+}
+
+// IsDeletedEQ applies the EQ predicate on the "is_deleted" field.
+func IsDeletedEQ(v bool) predicate.Song {
+	return predicate.Song(sql.FieldEQ(FieldIsDeleted, v))
+}
+
+// IsDeletedNEQ applies the NEQ predicate on the "is_deleted" field.
+func IsDeletedNEQ(v bool) predicate.Song {
+	return predicate.Song(sql.FieldNEQ(FieldIsDeleted, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

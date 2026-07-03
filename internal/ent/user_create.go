@@ -60,34 +60,6 @@ func (_c *UserCreate) SetNillableRole(v *string) *UserCreate {
 	return _c
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_c *UserCreate) SetIsDeleted(v bool) *UserCreate {
-	_c.mutation.SetIsDeleted(v)
-	return _c
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_c *UserCreate) SetNillableIsDeleted(v *bool) *UserCreate {
-	if v != nil {
-		_c.SetIsDeleted(*v)
-	}
-	return _c
-}
-
-// SetVersion sets the "version" field.
-func (_c *UserCreate) SetVersion(v int64) *UserCreate {
-	_c.mutation.SetVersion(v)
-	return _c
-}
-
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_c *UserCreate) SetNillableVersion(v *int64) *UserCreate {
-	if v != nil {
-		_c.SetVersion(*v)
-	}
-	return _c
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (_c *UserCreate) SetCreatedAt(v time.Time) *UserCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -149,14 +121,6 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultRole
 		_c.mutation.SetRole(v)
 	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		v := user.DefaultIsDeleted
-		_c.mutation.SetIsDeleted(v)
-	}
-	if _, ok := _c.mutation.Version(); !ok {
-		v := user.DefaultVersion
-		_c.mutation.SetVersion(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -182,12 +146,6 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Role(); !ok {
 		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "User.role"`)}
-	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		return &ValidationError{Name: "is_deleted", err: errors.New(`ent: missing required field "User.is_deleted"`)}
-	}
-	if _, ok := _c.mutation.Version(); !ok {
-		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "User.version"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "User.created_at"`)}
@@ -245,14 +203,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeString, value)
 		_node.Role = value
-	}
-	if value, ok := _c.mutation.IsDeleted(); ok {
-		_spec.SetField(user.FieldIsDeleted, field.TypeBool, value)
-		_node.IsDeleted = value
-	}
-	if value, ok := _c.mutation.Version(); ok {
-		_spec.SetField(user.FieldVersion, field.TypeInt64, value)
-		_node.Version = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)

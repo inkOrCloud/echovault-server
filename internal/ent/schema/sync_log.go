@@ -14,6 +14,7 @@ type SyncLog struct {
 // Fields returns the SyncLog fields.
 func (SyncLog) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").Immutable().Unique(),
 		field.String("device_id"),
 		field.String("entity_type"),
 		field.String("entity_id"),

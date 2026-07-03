@@ -29,8 +29,6 @@ type Lyric struct {
 	OffsetMs int32 `json:"offset_ms,omitempty"`
 	// Source holds the value of the "source" field.
 	Source string `json:"source,omitempty"`
-	// IsDeleted holds the value of the "is_deleted" field.
-	IsDeleted bool `json:"is_deleted,omitempty"`
 	// Version holds the value of the "version" field.
 	Version int64 `json:"version,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -45,8 +43,6 @@ func (*Lyric) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case lyric.FieldIsDeleted:
-			values[i] = new(sql.NullBool)
 		case lyric.FieldOffsetMs, lyric.FieldVersion:
 			values[i] = new(sql.NullInt64)
 		case lyric.FieldID, lyric.FieldSongID, lyric.FieldContent, lyric.FieldType, lyric.FieldLanguage, lyric.FieldSource:
@@ -109,12 +105,6 @@ func (_m *Lyric) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
 			} else if value.Valid {
 				_m.Source = value.String
-			}
-		case lyric.FieldIsDeleted:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_deleted", values[i])
-			} else if value.Valid {
-				_m.IsDeleted = value.Bool
 			}
 		case lyric.FieldVersion:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -187,9 +177,6 @@ func (_m *Lyric) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("source=")
 	builder.WriteString(_m.Source)
-	builder.WriteString(", ")
-	builder.WriteString("is_deleted=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsDeleted))
 	builder.WriteString(", ")
 	builder.WriteString("version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Version))

@@ -79,11 +79,6 @@ func CoverURL(v string) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldCoverURL, v))
 }
 
-// Type applies equality check predicate on the "type" field. It's identical to TypeEQ.
-func Type(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldEQ(FieldType, v))
-}
-
 // OwnerID applies equality check predicate on the "owner_id" field. It's identical to OwnerIDEQ.
 func OwnerID(v string) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldOwnerID, v))
@@ -95,13 +90,8 @@ func IsPublic(v bool) predicate.Playlist {
 }
 
 // SongCount applies equality check predicate on the "song_count" field. It's identical to SongCountEQ.
-func SongCount(v int32) predicate.Playlist {
+func SongCount(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldSongCount, v))
-}
-
-// IsDeleted applies equality check predicate on the "is_deleted" field. It's identical to IsDeletedEQ.
-func IsDeleted(v bool) predicate.Playlist {
-	return predicate.Playlist(sql.FieldEQ(FieldIsDeleted, v))
 }
 
 // Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
@@ -314,71 +304,6 @@ func CoverURLContainsFold(v string) predicate.Playlist {
 	return predicate.Playlist(sql.FieldContainsFold(FieldCoverURL, v))
 }
 
-// TypeEQ applies the EQ predicate on the "type" field.
-func TypeEQ(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldEQ(FieldType, v))
-}
-
-// TypeNEQ applies the NEQ predicate on the "type" field.
-func TypeNEQ(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldNEQ(FieldType, v))
-}
-
-// TypeIn applies the In predicate on the "type" field.
-func TypeIn(vs ...string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldIn(FieldType, vs...))
-}
-
-// TypeNotIn applies the NotIn predicate on the "type" field.
-func TypeNotIn(vs ...string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldNotIn(FieldType, vs...))
-}
-
-// TypeGT applies the GT predicate on the "type" field.
-func TypeGT(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldGT(FieldType, v))
-}
-
-// TypeGTE applies the GTE predicate on the "type" field.
-func TypeGTE(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldGTE(FieldType, v))
-}
-
-// TypeLT applies the LT predicate on the "type" field.
-func TypeLT(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldLT(FieldType, v))
-}
-
-// TypeLTE applies the LTE predicate on the "type" field.
-func TypeLTE(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldLTE(FieldType, v))
-}
-
-// TypeContains applies the Contains predicate on the "type" field.
-func TypeContains(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldContains(FieldType, v))
-}
-
-// TypeHasPrefix applies the HasPrefix predicate on the "type" field.
-func TypeHasPrefix(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldHasPrefix(FieldType, v))
-}
-
-// TypeHasSuffix applies the HasSuffix predicate on the "type" field.
-func TypeHasSuffix(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldHasSuffix(FieldType, v))
-}
-
-// TypeEqualFold applies the EqualFold predicate on the "type" field.
-func TypeEqualFold(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldEqualFold(FieldType, v))
-}
-
-// TypeContainsFold applies the ContainsFold predicate on the "type" field.
-func TypeContainsFold(v string) predicate.Playlist {
-	return predicate.Playlist(sql.FieldContainsFold(FieldType, v))
-}
-
 // OwnerIDEQ applies the EQ predicate on the "owner_id" field.
 func OwnerIDEQ(v string) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldOwnerID, v))
@@ -455,53 +380,43 @@ func IsPublicNEQ(v bool) predicate.Playlist {
 }
 
 // SongCountEQ applies the EQ predicate on the "song_count" field.
-func SongCountEQ(v int32) predicate.Playlist {
+func SongCountEQ(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldEQ(FieldSongCount, v))
 }
 
 // SongCountNEQ applies the NEQ predicate on the "song_count" field.
-func SongCountNEQ(v int32) predicate.Playlist {
+func SongCountNEQ(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldNEQ(FieldSongCount, v))
 }
 
 // SongCountIn applies the In predicate on the "song_count" field.
-func SongCountIn(vs ...int32) predicate.Playlist {
+func SongCountIn(vs ...int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldIn(FieldSongCount, vs...))
 }
 
 // SongCountNotIn applies the NotIn predicate on the "song_count" field.
-func SongCountNotIn(vs ...int32) predicate.Playlist {
+func SongCountNotIn(vs ...int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldNotIn(FieldSongCount, vs...))
 }
 
 // SongCountGT applies the GT predicate on the "song_count" field.
-func SongCountGT(v int32) predicate.Playlist {
+func SongCountGT(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldGT(FieldSongCount, v))
 }
 
 // SongCountGTE applies the GTE predicate on the "song_count" field.
-func SongCountGTE(v int32) predicate.Playlist {
+func SongCountGTE(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldGTE(FieldSongCount, v))
 }
 
 // SongCountLT applies the LT predicate on the "song_count" field.
-func SongCountLT(v int32) predicate.Playlist {
+func SongCountLT(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldLT(FieldSongCount, v))
 }
 
 // SongCountLTE applies the LTE predicate on the "song_count" field.
-func SongCountLTE(v int32) predicate.Playlist {
+func SongCountLTE(v int) predicate.Playlist {
 	return predicate.Playlist(sql.FieldLTE(FieldSongCount, v))
-}
-
-// IsDeletedEQ applies the EQ predicate on the "is_deleted" field.
-func IsDeletedEQ(v bool) predicate.Playlist {
-	return predicate.Playlist(sql.FieldEQ(FieldIsDeleted, v))
-}
-
-// IsDeletedNEQ applies the NEQ predicate on the "is_deleted" field.
-func IsDeletedNEQ(v bool) predicate.Playlist {
-	return predicate.Playlist(sql.FieldNEQ(FieldIsDeleted, v))
 }
 
 // VersionEQ applies the EQ predicate on the "version" field.

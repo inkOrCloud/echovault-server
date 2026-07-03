@@ -14,9 +14,11 @@ type PlaylistSong struct {
 // Fields returns the PlaylistSong fields.
 func (PlaylistSong) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").Immutable().Unique(),
 		field.String("playlist_id"),
 		field.String("song_id"),
 		field.Int32("position").Default(0),
+		field.String("added_by").Default(""),
 		field.Time("added_at"),
 	}
 }

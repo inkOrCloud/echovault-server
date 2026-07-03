@@ -18,6 +18,7 @@ type User struct {
 // Fields returns the User fields.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").Immutable().Unique(),
 		field.String("username").Unique().MaxLen(userUsernameMaxLen),
 		field.String("display_name").MaxLen(userDisplayNameMaxLen).Default(""),
 		field.String("password_hash"),

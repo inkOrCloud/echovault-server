@@ -129,7 +129,7 @@ func (s *Service) AddSong(ctx context.Context, playlistID, songID, addedBy strin
 		SetSongID(songID).
 		SetPosition(int32(pos)). //nolint:gosec // safe: overflow checked above
 		SetAddedBy(addedBy).
-		SetCreatedAt(time.Now()).
+		SetAddedAt(time.Now()).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("add song to playlist: %w", err)

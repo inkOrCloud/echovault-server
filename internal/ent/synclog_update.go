@@ -117,20 +117,6 @@ func (_u *SyncLogUpdate) ClearData() *SyncLogUpdate {
 	return _u
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (_u *SyncLogUpdate) SetTimestamp(v time.Time) *SyncLogUpdate {
-	_u.mutation.SetTimestamp(v)
-	return _u
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (_u *SyncLogUpdate) SetNillableTimestamp(v *time.Time) *SyncLogUpdate {
-	if v != nil {
-		_u.SetTimestamp(*v)
-	}
-	return _u
-}
-
 // SetAcked sets the "acked" field.
 func (_u *SyncLogUpdate) SetAcked(v bool) *SyncLogUpdate {
 	_u.mutation.SetAcked(v)
@@ -141,6 +127,20 @@ func (_u *SyncLogUpdate) SetAcked(v bool) *SyncLogUpdate {
 func (_u *SyncLogUpdate) SetNillableAcked(v *bool) *SyncLogUpdate {
 	if v != nil {
 		_u.SetAcked(*v)
+	}
+	return _u
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (_u *SyncLogUpdate) SetTimestamp(v time.Time) *SyncLogUpdate {
+	_u.mutation.SetTimestamp(v)
+	return _u
+}
+
+// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
+func (_u *SyncLogUpdate) SetNillableTimestamp(v *time.Time) *SyncLogUpdate {
+	if v != nil {
+		_u.SetTimestamp(*v)
 	}
 	return _u
 }
@@ -210,11 +210,11 @@ func (_u *SyncLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DataCleared() {
 		_spec.ClearField(synclog.FieldData, field.TypeBytes)
 	}
-	if value, ok := _u.mutation.Timestamp(); ok {
-		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
-	}
 	if value, ok := _u.mutation.Acked(); ok {
 		_spec.SetField(synclog.FieldAcked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Timestamp(); ok {
+		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -325,20 +325,6 @@ func (_u *SyncLogUpdateOne) ClearData() *SyncLogUpdateOne {
 	return _u
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (_u *SyncLogUpdateOne) SetTimestamp(v time.Time) *SyncLogUpdateOne {
-	_u.mutation.SetTimestamp(v)
-	return _u
-}
-
-// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
-func (_u *SyncLogUpdateOne) SetNillableTimestamp(v *time.Time) *SyncLogUpdateOne {
-	if v != nil {
-		_u.SetTimestamp(*v)
-	}
-	return _u
-}
-
 // SetAcked sets the "acked" field.
 func (_u *SyncLogUpdateOne) SetAcked(v bool) *SyncLogUpdateOne {
 	_u.mutation.SetAcked(v)
@@ -349,6 +335,20 @@ func (_u *SyncLogUpdateOne) SetAcked(v bool) *SyncLogUpdateOne {
 func (_u *SyncLogUpdateOne) SetNillableAcked(v *bool) *SyncLogUpdateOne {
 	if v != nil {
 		_u.SetAcked(*v)
+	}
+	return _u
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (_u *SyncLogUpdateOne) SetTimestamp(v time.Time) *SyncLogUpdateOne {
+	_u.mutation.SetTimestamp(v)
+	return _u
+}
+
+// SetNillableTimestamp sets the "timestamp" field if the given value is not nil.
+func (_u *SyncLogUpdateOne) SetNillableTimestamp(v *time.Time) *SyncLogUpdateOne {
+	if v != nil {
+		_u.SetTimestamp(*v)
 	}
 	return _u
 }
@@ -448,11 +448,11 @@ func (_u *SyncLogUpdateOne) sqlSave(ctx context.Context) (_node *SyncLog, err er
 	if _u.mutation.DataCleared() {
 		_spec.ClearField(synclog.FieldData, field.TypeBytes)
 	}
-	if value, ok := _u.mutation.Timestamp(); ok {
-		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
-	}
 	if value, ok := _u.mutation.Acked(); ok {
 		_spec.SetField(synclog.FieldAcked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Timestamp(); ok {
+		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
 	}
 	_node = &SyncLog{config: _u.config}
 	_spec.Assign = _node.assignValues

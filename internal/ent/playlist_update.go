@@ -70,20 +70,6 @@ func (_u *PlaylistUpdate) SetNillableCoverURL(v *string) *PlaylistUpdate {
 	return _u
 }
 
-// SetType sets the "type" field.
-func (_u *PlaylistUpdate) SetType(v string) *PlaylistUpdate {
-	_u.mutation.SetType(v)
-	return _u
-}
-
-// SetNillableType sets the "type" field if the given value is not nil.
-func (_u *PlaylistUpdate) SetNillableType(v *string) *PlaylistUpdate {
-	if v != nil {
-		_u.SetType(*v)
-	}
-	return _u
-}
-
 // SetOwnerID sets the "owner_id" field.
 func (_u *PlaylistUpdate) SetOwnerID(v string) *PlaylistUpdate {
 	_u.mutation.SetOwnerID(v)
@@ -113,14 +99,14 @@ func (_u *PlaylistUpdate) SetNillableIsPublic(v *bool) *PlaylistUpdate {
 }
 
 // SetSongCount sets the "song_count" field.
-func (_u *PlaylistUpdate) SetSongCount(v int32) *PlaylistUpdate {
+func (_u *PlaylistUpdate) SetSongCount(v int) *PlaylistUpdate {
 	_u.mutation.ResetSongCount()
 	_u.mutation.SetSongCount(v)
 	return _u
 }
 
 // SetNillableSongCount sets the "song_count" field if the given value is not nil.
-func (_u *PlaylistUpdate) SetNillableSongCount(v *int32) *PlaylistUpdate {
+func (_u *PlaylistUpdate) SetNillableSongCount(v *int) *PlaylistUpdate {
 	if v != nil {
 		_u.SetSongCount(*v)
 	}
@@ -128,22 +114,8 @@ func (_u *PlaylistUpdate) SetNillableSongCount(v *int32) *PlaylistUpdate {
 }
 
 // AddSongCount adds value to the "song_count" field.
-func (_u *PlaylistUpdate) AddSongCount(v int32) *PlaylistUpdate {
+func (_u *PlaylistUpdate) AddSongCount(v int) *PlaylistUpdate {
 	_u.mutation.AddSongCount(v)
-	return _u
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *PlaylistUpdate) SetIsDeleted(v bool) *PlaylistUpdate {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *PlaylistUpdate) SetNillableIsDeleted(v *bool) *PlaylistUpdate {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
 	return _u
 }
 
@@ -264,9 +236,6 @@ func (_u *PlaylistUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.CoverURL(); ok {
 		_spec.SetField(playlist.FieldCoverURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.GetType(); ok {
-		_spec.SetField(playlist.FieldType, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.OwnerID(); ok {
 		_spec.SetField(playlist.FieldOwnerID, field.TypeString, value)
 	}
@@ -274,13 +243,10 @@ func (_u *PlaylistUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.SetField(playlist.FieldIsPublic, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SongCount(); ok {
-		_spec.SetField(playlist.FieldSongCount, field.TypeInt32, value)
+		_spec.SetField(playlist.FieldSongCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedSongCount(); ok {
-		_spec.AddField(playlist.FieldSongCount, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(playlist.FieldIsDeleted, field.TypeBool, value)
+		_spec.AddField(playlist.FieldSongCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(playlist.FieldVersion, field.TypeInt64, value)
@@ -356,20 +322,6 @@ func (_u *PlaylistUpdateOne) SetNillableCoverURL(v *string) *PlaylistUpdateOne {
 	return _u
 }
 
-// SetType sets the "type" field.
-func (_u *PlaylistUpdateOne) SetType(v string) *PlaylistUpdateOne {
-	_u.mutation.SetType(v)
-	return _u
-}
-
-// SetNillableType sets the "type" field if the given value is not nil.
-func (_u *PlaylistUpdateOne) SetNillableType(v *string) *PlaylistUpdateOne {
-	if v != nil {
-		_u.SetType(*v)
-	}
-	return _u
-}
-
 // SetOwnerID sets the "owner_id" field.
 func (_u *PlaylistUpdateOne) SetOwnerID(v string) *PlaylistUpdateOne {
 	_u.mutation.SetOwnerID(v)
@@ -399,14 +351,14 @@ func (_u *PlaylistUpdateOne) SetNillableIsPublic(v *bool) *PlaylistUpdateOne {
 }
 
 // SetSongCount sets the "song_count" field.
-func (_u *PlaylistUpdateOne) SetSongCount(v int32) *PlaylistUpdateOne {
+func (_u *PlaylistUpdateOne) SetSongCount(v int) *PlaylistUpdateOne {
 	_u.mutation.ResetSongCount()
 	_u.mutation.SetSongCount(v)
 	return _u
 }
 
 // SetNillableSongCount sets the "song_count" field if the given value is not nil.
-func (_u *PlaylistUpdateOne) SetNillableSongCount(v *int32) *PlaylistUpdateOne {
+func (_u *PlaylistUpdateOne) SetNillableSongCount(v *int) *PlaylistUpdateOne {
 	if v != nil {
 		_u.SetSongCount(*v)
 	}
@@ -414,22 +366,8 @@ func (_u *PlaylistUpdateOne) SetNillableSongCount(v *int32) *PlaylistUpdateOne {
 }
 
 // AddSongCount adds value to the "song_count" field.
-func (_u *PlaylistUpdateOne) AddSongCount(v int32) *PlaylistUpdateOne {
+func (_u *PlaylistUpdateOne) AddSongCount(v int) *PlaylistUpdateOne {
 	_u.mutation.AddSongCount(v)
-	return _u
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *PlaylistUpdateOne) SetIsDeleted(v bool) *PlaylistUpdateOne {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *PlaylistUpdateOne) SetNillableIsDeleted(v *bool) *PlaylistUpdateOne {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
 	return _u
 }
 
@@ -580,9 +518,6 @@ func (_u *PlaylistUpdateOne) sqlSave(ctx context.Context) (_node *Playlist, err 
 	if value, ok := _u.mutation.CoverURL(); ok {
 		_spec.SetField(playlist.FieldCoverURL, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.GetType(); ok {
-		_spec.SetField(playlist.FieldType, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.OwnerID(); ok {
 		_spec.SetField(playlist.FieldOwnerID, field.TypeString, value)
 	}
@@ -590,13 +525,10 @@ func (_u *PlaylistUpdateOne) sqlSave(ctx context.Context) (_node *Playlist, err 
 		_spec.SetField(playlist.FieldIsPublic, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.SongCount(); ok {
-		_spec.SetField(playlist.FieldSongCount, field.TypeInt32, value)
+		_spec.SetField(playlist.FieldSongCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedSongCount(); ok {
-		_spec.AddField(playlist.FieldSongCount, field.TypeInt32, value)
-	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(playlist.FieldIsDeleted, field.TypeBool, value)
+		_spec.AddField(playlist.FieldSongCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(playlist.FieldVersion, field.TypeInt64, value)

@@ -59,12 +59,8 @@ func init() {
 	lyricDescSource := lyricFields[6].Descriptor()
 	// lyric.DefaultSource holds the default value on creation for the source field.
 	lyric.DefaultSource = lyricDescSource.Default.(string)
-	// lyricDescIsDeleted is the schema descriptor for is_deleted field.
-	lyricDescIsDeleted := lyricFields[7].Descriptor()
-	// lyric.DefaultIsDeleted holds the default value on creation for the is_deleted field.
-	lyric.DefaultIsDeleted = lyricDescIsDeleted.Default.(bool)
 	// lyricDescVersion is the schema descriptor for version field.
-	lyricDescVersion := lyricFields[8].Descriptor()
+	lyricDescVersion := lyricFields[7].Descriptor()
 	// lyric.DefaultVersion holds the default value on creation for the version field.
 	lyric.DefaultVersion = lyricDescVersion.Default.(int64)
 	playlistFields := schema.Playlist{}.Fields()
@@ -83,24 +79,16 @@ func init() {
 	playlistDescCoverURL := playlistFields[3].Descriptor()
 	// playlist.DefaultCoverURL holds the default value on creation for the cover_url field.
 	playlist.DefaultCoverURL = playlistDescCoverURL.Default.(string)
-	// playlistDescType is the schema descriptor for type field.
-	playlistDescType := playlistFields[4].Descriptor()
-	// playlist.DefaultType holds the default value on creation for the type field.
-	playlist.DefaultType = playlistDescType.Default.(string)
 	// playlistDescIsPublic is the schema descriptor for is_public field.
-	playlistDescIsPublic := playlistFields[6].Descriptor()
+	playlistDescIsPublic := playlistFields[5].Descriptor()
 	// playlist.DefaultIsPublic holds the default value on creation for the is_public field.
 	playlist.DefaultIsPublic = playlistDescIsPublic.Default.(bool)
 	// playlistDescSongCount is the schema descriptor for song_count field.
-	playlistDescSongCount := playlistFields[7].Descriptor()
+	playlistDescSongCount := playlistFields[6].Descriptor()
 	// playlist.DefaultSongCount holds the default value on creation for the song_count field.
-	playlist.DefaultSongCount = playlistDescSongCount.Default.(int32)
-	// playlistDescIsDeleted is the schema descriptor for is_deleted field.
-	playlistDescIsDeleted := playlistFields[8].Descriptor()
-	// playlist.DefaultIsDeleted holds the default value on creation for the is_deleted field.
-	playlist.DefaultIsDeleted = playlistDescIsDeleted.Default.(bool)
+	playlist.DefaultSongCount = playlistDescSongCount.Default.(int)
 	// playlistDescVersion is the schema descriptor for version field.
-	playlistDescVersion := playlistFields[9].Descriptor()
+	playlistDescVersion := playlistFields[7].Descriptor()
 	// playlist.DefaultVersion holds the default value on creation for the version field.
 	playlist.DefaultVersion = playlistDescVersion.Default.(int64)
 	playlistsongFields := schema.PlaylistSong{}.Fields()
@@ -113,10 +101,6 @@ func init() {
 	playlistsongDescAddedBy := playlistsongFields[4].Descriptor()
 	// playlistsong.DefaultAddedBy holds the default value on creation for the added_by field.
 	playlistsong.DefaultAddedBy = playlistsongDescAddedBy.Default.(string)
-	// playlistsongDescVersion is the schema descriptor for version field.
-	playlistsongDescVersion := playlistsongFields[5].Descriptor()
-	// playlistsong.DefaultVersion holds the default value on creation for the version field.
-	playlistsong.DefaultVersion = playlistsongDescVersion.Default.(int64)
 	songFields := schema.Song{}.Fields()
 	_ = songFields
 	// songDescTitle is the schema descriptor for title field.
@@ -199,18 +183,18 @@ func init() {
 	songDescOwnerID := songFields[17].Descriptor()
 	// song.DefaultOwnerID holds the default value on creation for the owner_id field.
 	song.DefaultOwnerID = songDescOwnerID.Default.(string)
-	// songDescIsDeleted is the schema descriptor for is_deleted field.
-	songDescIsDeleted := songFields[18].Descriptor()
-	// song.DefaultIsDeleted holds the default value on creation for the is_deleted field.
-	song.DefaultIsDeleted = songDescIsDeleted.Default.(bool)
 	// songDescVersion is the schema descriptor for version field.
-	songDescVersion := songFields[19].Descriptor()
+	songDescVersion := songFields[18].Descriptor()
 	// song.DefaultVersion holds the default value on creation for the version field.
 	song.DefaultVersion = songDescVersion.Default.(int64)
+	// songDescIsDeleted is the schema descriptor for is_deleted field.
+	songDescIsDeleted := songFields[19].Descriptor()
+	// song.DefaultIsDeleted holds the default value on creation for the is_deleted field.
+	song.DefaultIsDeleted = songDescIsDeleted.Default.(bool)
 	synclogFields := schema.SyncLog{}.Fields()
 	_ = synclogFields
 	// synclogDescAcked is the schema descriptor for acked field.
-	synclogDescAcked := synclogFields[8].Descriptor()
+	synclogDescAcked := synclogFields[7].Descriptor()
 	// synclog.DefaultAcked holds the default value on creation for the acked field.
 	synclog.DefaultAcked = synclogDescAcked.Default.(bool)
 	userFields := schema.User{}.Fields()
@@ -229,12 +213,4 @@ func init() {
 	userDescRole := userFields[4].Descriptor()
 	// user.DefaultRole holds the default value on creation for the role field.
 	user.DefaultRole = userDescRole.Default.(string)
-	// userDescIsDeleted is the schema descriptor for is_deleted field.
-	userDescIsDeleted := userFields[5].Descriptor()
-	// user.DefaultIsDeleted holds the default value on creation for the is_deleted field.
-	user.DefaultIsDeleted = userDescIsDeleted.Default.(bool)
-	// userDescVersion is the schema descriptor for version field.
-	userDescVersion := userFields[6].Descriptor()
-	// user.DefaultVersion holds the default value on creation for the version field.
-	user.DefaultVersion = userDescVersion.Default.(int64)
 }

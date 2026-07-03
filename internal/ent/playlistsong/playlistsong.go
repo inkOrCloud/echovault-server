@@ -19,10 +19,8 @@ const (
 	FieldPosition = "position"
 	// FieldAddedBy holds the string denoting the added_by field in the database.
 	FieldAddedBy = "added_by"
-	// FieldVersion holds the string denoting the version field in the database.
-	FieldVersion = "version"
-	// FieldCreatedAt holds the string denoting the created_at field in the database.
-	FieldCreatedAt = "created_at"
+	// FieldAddedAt holds the string denoting the added_at field in the database.
+	FieldAddedAt = "added_at"
 	// Table holds the table name of the playlistsong in the database.
 	Table = "playlist_songs"
 )
@@ -34,8 +32,7 @@ var Columns = []string{
 	FieldSongID,
 	FieldPosition,
 	FieldAddedBy,
-	FieldVersion,
-	FieldCreatedAt,
+	FieldAddedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -53,8 +50,6 @@ var (
 	DefaultPosition int32
 	// DefaultAddedBy holds the default value on creation for the "added_by" field.
 	DefaultAddedBy string
-	// DefaultVersion holds the default value on creation for the "version" field.
-	DefaultVersion int64
 )
 
 // OrderOption defines the ordering options for the PlaylistSong queries.
@@ -85,12 +80,7 @@ func ByAddedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAddedBy, opts...).ToFunc()
 }
 
-// ByVersion orders the results by the version field.
-func ByVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVersion, opts...).ToFunc()
-}
-
-// ByCreatedAt orders the results by the created_at field.
-func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+// ByAddedAt orders the results by the added_at field.
+func ByAddedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddedAt, opts...).ToFunc()
 }

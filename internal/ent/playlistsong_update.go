@@ -91,37 +91,16 @@ func (_u *PlaylistSongUpdate) SetNillableAddedBy(v *string) *PlaylistSongUpdate 
 	return _u
 }
 
-// SetVersion sets the "version" field.
-func (_u *PlaylistSongUpdate) SetVersion(v int64) *PlaylistSongUpdate {
-	_u.mutation.ResetVersion()
-	_u.mutation.SetVersion(v)
+// SetAddedAt sets the "added_at" field.
+func (_u *PlaylistSongUpdate) SetAddedAt(v time.Time) *PlaylistSongUpdate {
+	_u.mutation.SetAddedAt(v)
 	return _u
 }
 
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_u *PlaylistSongUpdate) SetNillableVersion(v *int64) *PlaylistSongUpdate {
+// SetNillableAddedAt sets the "added_at" field if the given value is not nil.
+func (_u *PlaylistSongUpdate) SetNillableAddedAt(v *time.Time) *PlaylistSongUpdate {
 	if v != nil {
-		_u.SetVersion(*v)
-	}
-	return _u
-}
-
-// AddVersion adds value to the "version" field.
-func (_u *PlaylistSongUpdate) AddVersion(v int64) *PlaylistSongUpdate {
-	_u.mutation.AddVersion(v)
-	return _u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *PlaylistSongUpdate) SetCreatedAt(v time.Time) *PlaylistSongUpdate {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PlaylistSongUpdate) SetNillableCreatedAt(v *time.Time) *PlaylistSongUpdate {
-	if v != nil {
-		_u.SetCreatedAt(*v)
+		_u.SetAddedAt(*v)
 	}
 	return _u
 }
@@ -182,14 +161,8 @@ func (_u *PlaylistSongUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if value, ok := _u.mutation.AddedBy(); ok {
 		_spec.SetField(playlistsong.FieldAddedBy, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Version(); ok {
-		_spec.SetField(playlistsong.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedVersion(); ok {
-		_spec.AddField(playlistsong.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(playlistsong.FieldCreatedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.AddedAt(); ok {
+		_spec.SetField(playlistsong.FieldAddedAt, field.TypeTime, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -274,37 +247,16 @@ func (_u *PlaylistSongUpdateOne) SetNillableAddedBy(v *string) *PlaylistSongUpda
 	return _u
 }
 
-// SetVersion sets the "version" field.
-func (_u *PlaylistSongUpdateOne) SetVersion(v int64) *PlaylistSongUpdateOne {
-	_u.mutation.ResetVersion()
-	_u.mutation.SetVersion(v)
+// SetAddedAt sets the "added_at" field.
+func (_u *PlaylistSongUpdateOne) SetAddedAt(v time.Time) *PlaylistSongUpdateOne {
+	_u.mutation.SetAddedAt(v)
 	return _u
 }
 
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_u *PlaylistSongUpdateOne) SetNillableVersion(v *int64) *PlaylistSongUpdateOne {
+// SetNillableAddedAt sets the "added_at" field if the given value is not nil.
+func (_u *PlaylistSongUpdateOne) SetNillableAddedAt(v *time.Time) *PlaylistSongUpdateOne {
 	if v != nil {
-		_u.SetVersion(*v)
-	}
-	return _u
-}
-
-// AddVersion adds value to the "version" field.
-func (_u *PlaylistSongUpdateOne) AddVersion(v int64) *PlaylistSongUpdateOne {
-	_u.mutation.AddVersion(v)
-	return _u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_u *PlaylistSongUpdateOne) SetCreatedAt(v time.Time) *PlaylistSongUpdateOne {
-	_u.mutation.SetCreatedAt(v)
-	return _u
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_u *PlaylistSongUpdateOne) SetNillableCreatedAt(v *time.Time) *PlaylistSongUpdateOne {
-	if v != nil {
-		_u.SetCreatedAt(*v)
+		_u.SetAddedAt(*v)
 	}
 	return _u
 }
@@ -395,14 +347,8 @@ func (_u *PlaylistSongUpdateOne) sqlSave(ctx context.Context) (_node *PlaylistSo
 	if value, ok := _u.mutation.AddedBy(); ok {
 		_spec.SetField(playlistsong.FieldAddedBy, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Version(); ok {
-		_spec.SetField(playlistsong.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedVersion(); ok {
-		_spec.AddField(playlistsong.FieldVersion, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.CreatedAt(); ok {
-		_spec.SetField(playlistsong.FieldCreatedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.AddedAt(); ok {
+		_spec.SetField(playlistsong.FieldAddedAt, field.TypeTime, value)
 	}
 	_node = &PlaylistSong{config: _u.config}
 	_spec.Assign = _node.assignValues

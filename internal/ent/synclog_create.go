@@ -56,12 +56,6 @@ func (_c *SyncLogCreate) SetData(v []byte) *SyncLogCreate {
 	return _c
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (_c *SyncLogCreate) SetTimestamp(v time.Time) *SyncLogCreate {
-	_c.mutation.SetTimestamp(v)
-	return _c
-}
-
 // SetAcked sets the "acked" field.
 func (_c *SyncLogCreate) SetAcked(v bool) *SyncLogCreate {
 	_c.mutation.SetAcked(v)
@@ -73,6 +67,12 @@ func (_c *SyncLogCreate) SetNillableAcked(v *bool) *SyncLogCreate {
 	if v != nil {
 		_c.SetAcked(*v)
 	}
+	return _c
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (_c *SyncLogCreate) SetTimestamp(v time.Time) *SyncLogCreate {
+	_c.mutation.SetTimestamp(v)
 	return _c
 }
 
@@ -140,11 +140,11 @@ func (_c *SyncLogCreate) check() error {
 	if _, ok := _c.mutation.Version(); !ok {
 		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "SyncLog.version"`)}
 	}
-	if _, ok := _c.mutation.Timestamp(); !ok {
-		return &ValidationError{Name: "timestamp", err: errors.New(`ent: missing required field "SyncLog.timestamp"`)}
-	}
 	if _, ok := _c.mutation.Acked(); !ok {
 		return &ValidationError{Name: "acked", err: errors.New(`ent: missing required field "SyncLog.acked"`)}
+	}
+	if _, ok := _c.mutation.Timestamp(); !ok {
+		return &ValidationError{Name: "timestamp", err: errors.New(`ent: missing required field "SyncLog.timestamp"`)}
 	}
 	return nil
 }
@@ -205,13 +205,13 @@ func (_c *SyncLogCreate) createSpec() (*SyncLog, *sqlgraph.CreateSpec) {
 		_spec.SetField(synclog.FieldData, field.TypeBytes, value)
 		_node.Data = value
 	}
-	if value, ok := _c.mutation.Timestamp(); ok {
-		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
-		_node.Timestamp = value
-	}
 	if value, ok := _c.mutation.Acked(); ok {
 		_spec.SetField(synclog.FieldAcked, field.TypeBool, value)
 		_node.Acked = value
+	}
+	if value, ok := _c.mutation.Timestamp(); ok {
+		_spec.SetField(synclog.FieldTimestamp, field.TypeTime, value)
+		_node.Timestamp = value
 	}
 	return _node, _spec
 }

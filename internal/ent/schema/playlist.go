@@ -19,10 +19,14 @@ type Playlist struct {
 // Fields returns the Playlist fields.
 func (Playlist) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").Immutable().Unique(),
 		field.String("name").MaxLen(playlistNameMaxLen),
 		field.String("description").MaxLen(playlistDescriptionMaxLen).Default(""),
-		field.String("user_id"),
+		field.String("cover_url").Default(""),
+		field.String("owner_id"),
+		field.Bool("is_public").Default(false),
 		field.Int("song_count").Default(0),
+		field.Int64("version").Default(1),
 		field.Time("created_at"),
 		field.Time("updated_at"),
 	}
@@ -31,6 +35,6 @@ func (Playlist) Fields() []ent.Field {
 // Indexes returns the Playlist indexes.
 func (Playlist) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("user_id"),
+		index.Fields("owner_id"),
 	}
 }

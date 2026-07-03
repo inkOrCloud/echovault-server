@@ -17,16 +17,12 @@ const (
 	FieldDescription = "description"
 	// FieldCoverURL holds the string denoting the cover_url field in the database.
 	FieldCoverURL = "cover_url"
-	// FieldType holds the string denoting the type field in the database.
-	FieldType = "type"
 	// FieldOwnerID holds the string denoting the owner_id field in the database.
 	FieldOwnerID = "owner_id"
 	// FieldIsPublic holds the string denoting the is_public field in the database.
 	FieldIsPublic = "is_public"
 	// FieldSongCount holds the string denoting the song_count field in the database.
 	FieldSongCount = "song_count"
-	// FieldIsDeleted holds the string denoting the is_deleted field in the database.
-	FieldIsDeleted = "is_deleted"
 	// FieldVersion holds the string denoting the version field in the database.
 	FieldVersion = "version"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -43,11 +39,9 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldCoverURL,
-	FieldType,
 	FieldOwnerID,
 	FieldIsPublic,
 	FieldSongCount,
-	FieldIsDeleted,
 	FieldVersion,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -72,14 +66,10 @@ var (
 	DescriptionValidator func(string) error
 	// DefaultCoverURL holds the default value on creation for the "cover_url" field.
 	DefaultCoverURL string
-	// DefaultType holds the default value on creation for the "type" field.
-	DefaultType string
 	// DefaultIsPublic holds the default value on creation for the "is_public" field.
 	DefaultIsPublic bool
 	// DefaultSongCount holds the default value on creation for the "song_count" field.
-	DefaultSongCount int32
-	// DefaultIsDeleted holds the default value on creation for the "is_deleted" field.
-	DefaultIsDeleted bool
+	DefaultSongCount int
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int64
 )
@@ -107,11 +97,6 @@ func ByCoverURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCoverURL, opts...).ToFunc()
 }
 
-// ByType orders the results by the type field.
-func ByType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldType, opts...).ToFunc()
-}
-
 // ByOwnerID orders the results by the owner_id field.
 func ByOwnerID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOwnerID, opts...).ToFunc()
@@ -125,11 +110,6 @@ func ByIsPublic(opts ...sql.OrderTermOption) OrderOption {
 // BySongCount orders the results by the song_count field.
 func BySongCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSongCount, opts...).ToFunc()
-}
-
-// ByIsDeleted orders the results by the is_deleted field.
-func ByIsDeleted(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsDeleted, opts...).ToFunc()
 }
 
 // ByVersion orders the results by the version field.

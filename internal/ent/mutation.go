@@ -886,7 +886,6 @@ type LyricMutation struct {
 	offset_ms     *int32
 	addoffset_ms  *int32
 	source        *string
-	is_deleted    *bool
 	version       *int64
 	addversion    *int64
 	created_at    *time.Time
@@ -1237,42 +1236,6 @@ func (m *LyricMutation) ResetSource() {
 	m.source = nil
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (m *LyricMutation) SetIsDeleted(b bool) {
-	m.is_deleted = &b
-}
-
-// IsDeleted returns the value of the "is_deleted" field in the mutation.
-func (m *LyricMutation) IsDeleted() (r bool, exists bool) {
-	v := m.is_deleted
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsDeleted returns the old "is_deleted" field's value of the Lyric entity.
-// If the Lyric object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LyricMutation) OldIsDeleted(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsDeleted is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsDeleted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsDeleted: %w", err)
-	}
-	return oldValue.IsDeleted, nil
-}
-
-// ResetIsDeleted resets all changes to the "is_deleted" field.
-func (m *LyricMutation) ResetIsDeleted() {
-	m.is_deleted = nil
-}
-
 // SetVersion sets the "version" field.
 func (m *LyricMutation) SetVersion(i int64) {
 	m.version = &i
@@ -1435,7 +1398,7 @@ func (m *LyricMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LyricMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 9)
 	if m.song_id != nil {
 		fields = append(fields, lyric.FieldSongID)
 	}
@@ -1453,9 +1416,6 @@ func (m *LyricMutation) Fields() []string {
 	}
 	if m.source != nil {
 		fields = append(fields, lyric.FieldSource)
-	}
-	if m.is_deleted != nil {
-		fields = append(fields, lyric.FieldIsDeleted)
 	}
 	if m.version != nil {
 		fields = append(fields, lyric.FieldVersion)
@@ -1486,8 +1446,6 @@ func (m *LyricMutation) Field(name string) (ent.Value, bool) {
 		return m.OffsetMs()
 	case lyric.FieldSource:
 		return m.Source()
-	case lyric.FieldIsDeleted:
-		return m.IsDeleted()
 	case lyric.FieldVersion:
 		return m.Version()
 	case lyric.FieldCreatedAt:
@@ -1515,8 +1473,6 @@ func (m *LyricMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldOffsetMs(ctx)
 	case lyric.FieldSource:
 		return m.OldSource(ctx)
-	case lyric.FieldIsDeleted:
-		return m.OldIsDeleted(ctx)
 	case lyric.FieldVersion:
 		return m.OldVersion(ctx)
 	case lyric.FieldCreatedAt:
@@ -1573,13 +1529,6 @@ func (m *LyricMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSource(v)
-		return nil
-	case lyric.FieldIsDeleted:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsDeleted(v)
 		return nil
 	case lyric.FieldVersion:
 		v, ok := value.(int64)
@@ -1696,9 +1645,6 @@ func (m *LyricMutation) ResetField(name string) error {
 	case lyric.FieldSource:
 		m.ResetSource()
 		return nil
-	case lyric.FieldIsDeleted:
-		m.ResetIsDeleted()
-		return nil
 	case lyric.FieldVersion:
 		m.ResetVersion()
 		return nil
@@ -1769,12 +1715,10 @@ type PlaylistMutation struct {
 	name          *string
 	description   *string
 	cover_url     *string
-	_type         *string
 	owner_id      *string
 	is_public     *bool
-	song_count    *int32
-	addsong_count *int32
-	is_deleted    *bool
+	song_count    *int
+	addsong_count *int
 	version       *int64
 	addversion    *int64
 	created_at    *time.Time
@@ -1997,42 +1941,6 @@ func (m *PlaylistMutation) ResetCoverURL() {
 	m.cover_url = nil
 }
 
-// SetType sets the "type" field.
-func (m *PlaylistMutation) SetType(s string) {
-	m._type = &s
-}
-
-// GetType returns the value of the "type" field in the mutation.
-func (m *PlaylistMutation) GetType() (r string, exists bool) {
-	v := m._type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldType returns the old "type" field's value of the Playlist entity.
-// If the Playlist object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PlaylistMutation) OldType(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldType: %w", err)
-	}
-	return oldValue.Type, nil
-}
-
-// ResetType resets all changes to the "type" field.
-func (m *PlaylistMutation) ResetType() {
-	m._type = nil
-}
-
 // SetOwnerID sets the "owner_id" field.
 func (m *PlaylistMutation) SetOwnerID(s string) {
 	m.owner_id = &s
@@ -2106,13 +2014,13 @@ func (m *PlaylistMutation) ResetIsPublic() {
 }
 
 // SetSongCount sets the "song_count" field.
-func (m *PlaylistMutation) SetSongCount(i int32) {
+func (m *PlaylistMutation) SetSongCount(i int) {
 	m.song_count = &i
 	m.addsong_count = nil
 }
 
 // SongCount returns the value of the "song_count" field in the mutation.
-func (m *PlaylistMutation) SongCount() (r int32, exists bool) {
+func (m *PlaylistMutation) SongCount() (r int, exists bool) {
 	v := m.song_count
 	if v == nil {
 		return
@@ -2123,7 +2031,7 @@ func (m *PlaylistMutation) SongCount() (r int32, exists bool) {
 // OldSongCount returns the old "song_count" field's value of the Playlist entity.
 // If the Playlist object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PlaylistMutation) OldSongCount(ctx context.Context) (v int32, err error) {
+func (m *PlaylistMutation) OldSongCount(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSongCount is only allowed on UpdateOne operations")
 	}
@@ -2138,7 +2046,7 @@ func (m *PlaylistMutation) OldSongCount(ctx context.Context) (v int32, err error
 }
 
 // AddSongCount adds i to the "song_count" field.
-func (m *PlaylistMutation) AddSongCount(i int32) {
+func (m *PlaylistMutation) AddSongCount(i int) {
 	if m.addsong_count != nil {
 		*m.addsong_count += i
 	} else {
@@ -2147,7 +2055,7 @@ func (m *PlaylistMutation) AddSongCount(i int32) {
 }
 
 // AddedSongCount returns the value that was added to the "song_count" field in this mutation.
-func (m *PlaylistMutation) AddedSongCount() (r int32, exists bool) {
+func (m *PlaylistMutation) AddedSongCount() (r int, exists bool) {
 	v := m.addsong_count
 	if v == nil {
 		return
@@ -2159,42 +2067,6 @@ func (m *PlaylistMutation) AddedSongCount() (r int32, exists bool) {
 func (m *PlaylistMutation) ResetSongCount() {
 	m.song_count = nil
 	m.addsong_count = nil
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (m *PlaylistMutation) SetIsDeleted(b bool) {
-	m.is_deleted = &b
-}
-
-// IsDeleted returns the value of the "is_deleted" field in the mutation.
-func (m *PlaylistMutation) IsDeleted() (r bool, exists bool) {
-	v := m.is_deleted
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsDeleted returns the old "is_deleted" field's value of the Playlist entity.
-// If the Playlist object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PlaylistMutation) OldIsDeleted(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsDeleted is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsDeleted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsDeleted: %w", err)
-	}
-	return oldValue.IsDeleted, nil
-}
-
-// ResetIsDeleted resets all changes to the "is_deleted" field.
-func (m *PlaylistMutation) ResetIsDeleted() {
-	m.is_deleted = nil
 }
 
 // SetVersion sets the "version" field.
@@ -2359,7 +2231,7 @@ func (m *PlaylistMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 9)
 	if m.name != nil {
 		fields = append(fields, playlist.FieldName)
 	}
@@ -2369,9 +2241,6 @@ func (m *PlaylistMutation) Fields() []string {
 	if m.cover_url != nil {
 		fields = append(fields, playlist.FieldCoverURL)
 	}
-	if m._type != nil {
-		fields = append(fields, playlist.FieldType)
-	}
 	if m.owner_id != nil {
 		fields = append(fields, playlist.FieldOwnerID)
 	}
@@ -2380,9 +2249,6 @@ func (m *PlaylistMutation) Fields() []string {
 	}
 	if m.song_count != nil {
 		fields = append(fields, playlist.FieldSongCount)
-	}
-	if m.is_deleted != nil {
-		fields = append(fields, playlist.FieldIsDeleted)
 	}
 	if m.version != nil {
 		fields = append(fields, playlist.FieldVersion)
@@ -2407,16 +2273,12 @@ func (m *PlaylistMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case playlist.FieldCoverURL:
 		return m.CoverURL()
-	case playlist.FieldType:
-		return m.GetType()
 	case playlist.FieldOwnerID:
 		return m.OwnerID()
 	case playlist.FieldIsPublic:
 		return m.IsPublic()
 	case playlist.FieldSongCount:
 		return m.SongCount()
-	case playlist.FieldIsDeleted:
-		return m.IsDeleted()
 	case playlist.FieldVersion:
 		return m.Version()
 	case playlist.FieldCreatedAt:
@@ -2438,16 +2300,12 @@ func (m *PlaylistMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldDescription(ctx)
 	case playlist.FieldCoverURL:
 		return m.OldCoverURL(ctx)
-	case playlist.FieldType:
-		return m.OldType(ctx)
 	case playlist.FieldOwnerID:
 		return m.OldOwnerID(ctx)
 	case playlist.FieldIsPublic:
 		return m.OldIsPublic(ctx)
 	case playlist.FieldSongCount:
 		return m.OldSongCount(ctx)
-	case playlist.FieldIsDeleted:
-		return m.OldIsDeleted(ctx)
 	case playlist.FieldVersion:
 		return m.OldVersion(ctx)
 	case playlist.FieldCreatedAt:
@@ -2484,13 +2342,6 @@ func (m *PlaylistMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCoverURL(v)
 		return nil
-	case playlist.FieldType:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetType(v)
-		return nil
 	case playlist.FieldOwnerID:
 		v, ok := value.(string)
 		if !ok {
@@ -2506,18 +2357,11 @@ func (m *PlaylistMutation) SetField(name string, value ent.Value) error {
 		m.SetIsPublic(v)
 		return nil
 	case playlist.FieldSongCount:
-		v, ok := value.(int32)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSongCount(v)
-		return nil
-	case playlist.FieldIsDeleted:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsDeleted(v)
 		return nil
 	case playlist.FieldVersion:
 		v, ok := value.(int64)
@@ -2576,7 +2420,7 @@ func (m *PlaylistMutation) AddedField(name string) (ent.Value, bool) {
 func (m *PlaylistMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case playlist.FieldSongCount:
-		v, ok := value.(int32)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2625,9 +2469,6 @@ func (m *PlaylistMutation) ResetField(name string) error {
 	case playlist.FieldCoverURL:
 		m.ResetCoverURL()
 		return nil
-	case playlist.FieldType:
-		m.ResetType()
-		return nil
 	case playlist.FieldOwnerID:
 		m.ResetOwnerID()
 		return nil
@@ -2636,9 +2477,6 @@ func (m *PlaylistMutation) ResetField(name string) error {
 		return nil
 	case playlist.FieldSongCount:
 		m.ResetSongCount()
-		return nil
-	case playlist.FieldIsDeleted:
-		m.ResetIsDeleted()
 		return nil
 	case playlist.FieldVersion:
 		m.ResetVersion()
@@ -2712,9 +2550,7 @@ type PlaylistSongMutation struct {
 	position      *int32
 	addposition   *int32
 	added_by      *string
-	version       *int64
-	addversion    *int64
-	created_at    *time.Time
+	added_at      *time.Time
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*PlaylistSong, error)
@@ -2989,96 +2825,40 @@ func (m *PlaylistSongMutation) ResetAddedBy() {
 	m.added_by = nil
 }
 
-// SetVersion sets the "version" field.
-func (m *PlaylistSongMutation) SetVersion(i int64) {
-	m.version = &i
-	m.addversion = nil
+// SetAddedAt sets the "added_at" field.
+func (m *PlaylistSongMutation) SetAddedAt(t time.Time) {
+	m.added_at = &t
 }
 
-// Version returns the value of the "version" field in the mutation.
-func (m *PlaylistSongMutation) Version() (r int64, exists bool) {
-	v := m.version
+// AddedAt returns the value of the "added_at" field in the mutation.
+func (m *PlaylistSongMutation) AddedAt() (r time.Time, exists bool) {
+	v := m.added_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldVersion returns the old "version" field's value of the PlaylistSong entity.
+// OldAddedAt returns the old "added_at" field's value of the PlaylistSong entity.
 // If the PlaylistSong object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PlaylistSongMutation) OldVersion(ctx context.Context) (v int64, err error) {
+func (m *PlaylistSongMutation) OldAddedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+		return v, errors.New("OldAddedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVersion requires an ID field in the mutation")
+		return v, errors.New("OldAddedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+		return v, fmt.Errorf("querying old value for OldAddedAt: %w", err)
 	}
-	return oldValue.Version, nil
+	return oldValue.AddedAt, nil
 }
 
-// AddVersion adds i to the "version" field.
-func (m *PlaylistSongMutation) AddVersion(i int64) {
-	if m.addversion != nil {
-		*m.addversion += i
-	} else {
-		m.addversion = &i
-	}
-}
-
-// AddedVersion returns the value that was added to the "version" field in this mutation.
-func (m *PlaylistSongMutation) AddedVersion() (r int64, exists bool) {
-	v := m.addversion
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetVersion resets all changes to the "version" field.
-func (m *PlaylistSongMutation) ResetVersion() {
-	m.version = nil
-	m.addversion = nil
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *PlaylistSongMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *PlaylistSongMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the PlaylistSong entity.
-// If the PlaylistSong object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PlaylistSongMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *PlaylistSongMutation) ResetCreatedAt() {
-	m.created_at = nil
+// ResetAddedAt resets all changes to the "added_at" field.
+func (m *PlaylistSongMutation) ResetAddedAt() {
+	m.added_at = nil
 }
 
 // Where appends a list predicates to the PlaylistSongMutation builder.
@@ -3115,7 +2895,7 @@ func (m *PlaylistSongMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PlaylistSongMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.playlist_id != nil {
 		fields = append(fields, playlistsong.FieldPlaylistID)
 	}
@@ -3128,11 +2908,8 @@ func (m *PlaylistSongMutation) Fields() []string {
 	if m.added_by != nil {
 		fields = append(fields, playlistsong.FieldAddedBy)
 	}
-	if m.version != nil {
-		fields = append(fields, playlistsong.FieldVersion)
-	}
-	if m.created_at != nil {
-		fields = append(fields, playlistsong.FieldCreatedAt)
+	if m.added_at != nil {
+		fields = append(fields, playlistsong.FieldAddedAt)
 	}
 	return fields
 }
@@ -3150,10 +2927,8 @@ func (m *PlaylistSongMutation) Field(name string) (ent.Value, bool) {
 		return m.Position()
 	case playlistsong.FieldAddedBy:
 		return m.AddedBy()
-	case playlistsong.FieldVersion:
-		return m.Version()
-	case playlistsong.FieldCreatedAt:
-		return m.CreatedAt()
+	case playlistsong.FieldAddedAt:
+		return m.AddedAt()
 	}
 	return nil, false
 }
@@ -3171,10 +2946,8 @@ func (m *PlaylistSongMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldPosition(ctx)
 	case playlistsong.FieldAddedBy:
 		return m.OldAddedBy(ctx)
-	case playlistsong.FieldVersion:
-		return m.OldVersion(ctx)
-	case playlistsong.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
+	case playlistsong.FieldAddedAt:
+		return m.OldAddedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown PlaylistSong field %s", name)
 }
@@ -3212,19 +2985,12 @@ func (m *PlaylistSongMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAddedBy(v)
 		return nil
-	case playlistsong.FieldVersion:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVersion(v)
-		return nil
-	case playlistsong.FieldCreatedAt:
+	case playlistsong.FieldAddedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCreatedAt(v)
+		m.SetAddedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PlaylistSong field %s", name)
@@ -3237,9 +3003,6 @@ func (m *PlaylistSongMutation) AddedFields() []string {
 	if m.addposition != nil {
 		fields = append(fields, playlistsong.FieldPosition)
 	}
-	if m.addversion != nil {
-		fields = append(fields, playlistsong.FieldVersion)
-	}
 	return fields
 }
 
@@ -3250,8 +3013,6 @@ func (m *PlaylistSongMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case playlistsong.FieldPosition:
 		return m.AddedPosition()
-	case playlistsong.FieldVersion:
-		return m.AddedVersion()
 	}
 	return nil, false
 }
@@ -3267,13 +3028,6 @@ func (m *PlaylistSongMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPosition(v)
-		return nil
-	case playlistsong.FieldVersion:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PlaylistSong numeric field %s", name)
@@ -3314,11 +3068,8 @@ func (m *PlaylistSongMutation) ResetField(name string) error {
 	case playlistsong.FieldAddedBy:
 		m.ResetAddedBy()
 		return nil
-	case playlistsong.FieldVersion:
-		m.ResetVersion()
-		return nil
-	case playlistsong.FieldCreatedAt:
-		m.ResetCreatedAt()
+	case playlistsong.FieldAddedAt:
+		m.ResetAddedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown PlaylistSong field %s", name)
@@ -3402,9 +3153,9 @@ type SongMutation struct {
 	source          *string
 	file_status     *string
 	owner_id        *string
-	is_deleted      *bool
 	version         *int64
 	addversion      *int64
+	is_deleted      *bool
 	created_at      *time.Time
 	updated_at      *time.Time
 	clearedFields   map[string]struct{}
@@ -4269,42 +4020,6 @@ func (m *SongMutation) ResetOwnerID() {
 	m.owner_id = nil
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (m *SongMutation) SetIsDeleted(b bool) {
-	m.is_deleted = &b
-}
-
-// IsDeleted returns the value of the "is_deleted" field in the mutation.
-func (m *SongMutation) IsDeleted() (r bool, exists bool) {
-	v := m.is_deleted
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsDeleted returns the old "is_deleted" field's value of the Song entity.
-// If the Song object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SongMutation) OldIsDeleted(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsDeleted is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsDeleted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsDeleted: %w", err)
-	}
-	return oldValue.IsDeleted, nil
-}
-
-// ResetIsDeleted resets all changes to the "is_deleted" field.
-func (m *SongMutation) ResetIsDeleted() {
-	m.is_deleted = nil
-}
-
 // SetVersion sets the "version" field.
 func (m *SongMutation) SetVersion(i int64) {
 	m.version = &i
@@ -4359,6 +4074,42 @@ func (m *SongMutation) AddedVersion() (r int64, exists bool) {
 func (m *SongMutation) ResetVersion() {
 	m.version = nil
 	m.addversion = nil
+}
+
+// SetIsDeleted sets the "is_deleted" field.
+func (m *SongMutation) SetIsDeleted(b bool) {
+	m.is_deleted = &b
+}
+
+// IsDeleted returns the value of the "is_deleted" field in the mutation.
+func (m *SongMutation) IsDeleted() (r bool, exists bool) {
+	v := m.is_deleted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsDeleted returns the old "is_deleted" field's value of the Song entity.
+// If the Song object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SongMutation) OldIsDeleted(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsDeleted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsDeleted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsDeleted: %w", err)
+	}
+	return oldValue.IsDeleted, nil
+}
+
+// ResetIsDeleted resets all changes to the "is_deleted" field.
+func (m *SongMutation) ResetIsDeleted() {
+	m.is_deleted = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -4519,11 +4270,11 @@ func (m *SongMutation) Fields() []string {
 	if m.owner_id != nil {
 		fields = append(fields, song.FieldOwnerID)
 	}
-	if m.is_deleted != nil {
-		fields = append(fields, song.FieldIsDeleted)
-	}
 	if m.version != nil {
 		fields = append(fields, song.FieldVersion)
+	}
+	if m.is_deleted != nil {
+		fields = append(fields, song.FieldIsDeleted)
 	}
 	if m.created_at != nil {
 		fields = append(fields, song.FieldCreatedAt)
@@ -4573,10 +4324,10 @@ func (m *SongMutation) Field(name string) (ent.Value, bool) {
 		return m.FileStatus()
 	case song.FieldOwnerID:
 		return m.OwnerID()
-	case song.FieldIsDeleted:
-		return m.IsDeleted()
 	case song.FieldVersion:
 		return m.Version()
+	case song.FieldIsDeleted:
+		return m.IsDeleted()
 	case song.FieldCreatedAt:
 		return m.CreatedAt()
 	case song.FieldUpdatedAt:
@@ -4624,10 +4375,10 @@ func (m *SongMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldFileStatus(ctx)
 	case song.FieldOwnerID:
 		return m.OldOwnerID(ctx)
-	case song.FieldIsDeleted:
-		return m.OldIsDeleted(ctx)
 	case song.FieldVersion:
 		return m.OldVersion(ctx)
+	case song.FieldIsDeleted:
+		return m.OldIsDeleted(ctx)
 	case song.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case song.FieldUpdatedAt:
@@ -4760,19 +4511,19 @@ func (m *SongMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOwnerID(v)
 		return nil
-	case song.FieldIsDeleted:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsDeleted(v)
-		return nil
 	case song.FieldVersion:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVersion(v)
+		return nil
+	case song.FieldIsDeleted:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsDeleted(v)
 		return nil
 	case song.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -4987,11 +4738,11 @@ func (m *SongMutation) ResetField(name string) error {
 	case song.FieldOwnerID:
 		m.ResetOwnerID()
 		return nil
-	case song.FieldIsDeleted:
-		m.ResetIsDeleted()
-		return nil
 	case song.FieldVersion:
 		m.ResetVersion()
+		return nil
+	case song.FieldIsDeleted:
+		m.ResetIsDeleted()
 		return nil
 	case song.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -5064,8 +4815,8 @@ type SyncLogMutation struct {
 	version       *int64
 	addversion    *int64
 	data          *[]byte
-	timestamp     *time.Time
 	acked         *bool
+	timestamp     *time.Time
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*SyncLog, error)
@@ -5425,42 +5176,6 @@ func (m *SyncLogMutation) ResetData() {
 	delete(m.clearedFields, synclog.FieldData)
 }
 
-// SetTimestamp sets the "timestamp" field.
-func (m *SyncLogMutation) SetTimestamp(t time.Time) {
-	m.timestamp = &t
-}
-
-// Timestamp returns the value of the "timestamp" field in the mutation.
-func (m *SyncLogMutation) Timestamp() (r time.Time, exists bool) {
-	v := m.timestamp
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTimestamp returns the old "timestamp" field's value of the SyncLog entity.
-// If the SyncLog object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SyncLogMutation) OldTimestamp(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTimestamp requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
-	}
-	return oldValue.Timestamp, nil
-}
-
-// ResetTimestamp resets all changes to the "timestamp" field.
-func (m *SyncLogMutation) ResetTimestamp() {
-	m.timestamp = nil
-}
-
 // SetAcked sets the "acked" field.
 func (m *SyncLogMutation) SetAcked(b bool) {
 	m.acked = &b
@@ -5495,6 +5210,42 @@ func (m *SyncLogMutation) OldAcked(ctx context.Context) (v bool, err error) {
 // ResetAcked resets all changes to the "acked" field.
 func (m *SyncLogMutation) ResetAcked() {
 	m.acked = nil
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (m *SyncLogMutation) SetTimestamp(t time.Time) {
+	m.timestamp = &t
+}
+
+// Timestamp returns the value of the "timestamp" field in the mutation.
+func (m *SyncLogMutation) Timestamp() (r time.Time, exists bool) {
+	v := m.timestamp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimestamp returns the old "timestamp" field's value of the SyncLog entity.
+// If the SyncLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SyncLogMutation) OldTimestamp(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimestamp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
+	}
+	return oldValue.Timestamp, nil
+}
+
+// ResetTimestamp resets all changes to the "timestamp" field.
+func (m *SyncLogMutation) ResetTimestamp() {
+	m.timestamp = nil
 }
 
 // Where appends a list predicates to the SyncLogMutation builder.
@@ -5550,11 +5301,11 @@ func (m *SyncLogMutation) Fields() []string {
 	if m.data != nil {
 		fields = append(fields, synclog.FieldData)
 	}
-	if m.timestamp != nil {
-		fields = append(fields, synclog.FieldTimestamp)
-	}
 	if m.acked != nil {
 		fields = append(fields, synclog.FieldAcked)
+	}
+	if m.timestamp != nil {
+		fields = append(fields, synclog.FieldTimestamp)
 	}
 	return fields
 }
@@ -5576,10 +5327,10 @@ func (m *SyncLogMutation) Field(name string) (ent.Value, bool) {
 		return m.Version()
 	case synclog.FieldData:
 		return m.Data()
-	case synclog.FieldTimestamp:
-		return m.Timestamp()
 	case synclog.FieldAcked:
 		return m.Acked()
+	case synclog.FieldTimestamp:
+		return m.Timestamp()
 	}
 	return nil, false
 }
@@ -5601,10 +5352,10 @@ func (m *SyncLogMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldVersion(ctx)
 	case synclog.FieldData:
 		return m.OldData(ctx)
-	case synclog.FieldTimestamp:
-		return m.OldTimestamp(ctx)
 	case synclog.FieldAcked:
 		return m.OldAcked(ctx)
+	case synclog.FieldTimestamp:
+		return m.OldTimestamp(ctx)
 	}
 	return nil, fmt.Errorf("unknown SyncLog field %s", name)
 }
@@ -5656,19 +5407,19 @@ func (m *SyncLogMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetData(v)
 		return nil
-	case synclog.FieldTimestamp:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTimestamp(v)
-		return nil
 	case synclog.FieldAcked:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAcked(v)
+		return nil
+	case synclog.FieldTimestamp:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimestamp(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SyncLog field %s", name)
@@ -5761,11 +5512,11 @@ func (m *SyncLogMutation) ResetField(name string) error {
 	case synclog.FieldData:
 		m.ResetData()
 		return nil
-	case synclog.FieldTimestamp:
-		m.ResetTimestamp()
-		return nil
 	case synclog.FieldAcked:
 		m.ResetAcked()
+		return nil
+	case synclog.FieldTimestamp:
+		m.ResetTimestamp()
 		return nil
 	}
 	return fmt.Errorf("unknown SyncLog field %s", name)
@@ -5829,9 +5580,6 @@ type UserMutation struct {
 	display_name  *string
 	password_hash *string
 	role          *string
-	is_deleted    *bool
-	version       *int64
-	addversion    *int64
 	created_at    *time.Time
 	updated_at    *time.Time
 	clearedFields map[string]struct{}
@@ -6088,98 +5836,6 @@ func (m *UserMutation) ResetRole() {
 	m.role = nil
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (m *UserMutation) SetIsDeleted(b bool) {
-	m.is_deleted = &b
-}
-
-// IsDeleted returns the value of the "is_deleted" field in the mutation.
-func (m *UserMutation) IsDeleted() (r bool, exists bool) {
-	v := m.is_deleted
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIsDeleted returns the old "is_deleted" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldIsDeleted(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIsDeleted is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIsDeleted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIsDeleted: %w", err)
-	}
-	return oldValue.IsDeleted, nil
-}
-
-// ResetIsDeleted resets all changes to the "is_deleted" field.
-func (m *UserMutation) ResetIsDeleted() {
-	m.is_deleted = nil
-}
-
-// SetVersion sets the "version" field.
-func (m *UserMutation) SetVersion(i int64) {
-	m.version = &i
-	m.addversion = nil
-}
-
-// Version returns the value of the "version" field in the mutation.
-func (m *UserMutation) Version() (r int64, exists bool) {
-	v := m.version
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldVersion returns the old "version" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldVersion(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldVersion requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
-	}
-	return oldValue.Version, nil
-}
-
-// AddVersion adds i to the "version" field.
-func (m *UserMutation) AddVersion(i int64) {
-	if m.addversion != nil {
-		*m.addversion += i
-	} else {
-		m.addversion = &i
-	}
-}
-
-// AddedVersion returns the value that was added to the "version" field in this mutation.
-func (m *UserMutation) AddedVersion() (r int64, exists bool) {
-	v := m.addversion
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetVersion resets all changes to the "version" field.
-func (m *UserMutation) ResetVersion() {
-	m.version = nil
-	m.addversion = nil
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (m *UserMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -6286,7 +5942,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 6)
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
 	}
@@ -6298,12 +5954,6 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.role != nil {
 		fields = append(fields, user.FieldRole)
-	}
-	if m.is_deleted != nil {
-		fields = append(fields, user.FieldIsDeleted)
-	}
-	if m.version != nil {
-		fields = append(fields, user.FieldVersion)
 	}
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
@@ -6327,10 +5977,6 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.PasswordHash()
 	case user.FieldRole:
 		return m.Role()
-	case user.FieldIsDeleted:
-		return m.IsDeleted()
-	case user.FieldVersion:
-		return m.Version()
 	case user.FieldCreatedAt:
 		return m.CreatedAt()
 	case user.FieldUpdatedAt:
@@ -6352,10 +5998,6 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPasswordHash(ctx)
 	case user.FieldRole:
 		return m.OldRole(ctx)
-	case user.FieldIsDeleted:
-		return m.OldIsDeleted(ctx)
-	case user.FieldVersion:
-		return m.OldVersion(ctx)
 	case user.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case user.FieldUpdatedAt:
@@ -6397,20 +6039,6 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRole(v)
 		return nil
-	case user.FieldIsDeleted:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIsDeleted(v)
-		return nil
-	case user.FieldVersion:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetVersion(v)
-		return nil
 	case user.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -6432,21 +6060,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *UserMutation) AddedFields() []string {
-	var fields []string
-	if m.addversion != nil {
-		fields = append(fields, user.FieldVersion)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case user.FieldVersion:
-		return m.AddedVersion()
-	}
 	return nil, false
 }
 
@@ -6455,13 +6075,6 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case user.FieldVersion:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddVersion(v)
-		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -6500,12 +6113,6 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldRole:
 		m.ResetRole()
-		return nil
-	case user.FieldIsDeleted:
-		m.ResetIsDeleted()
-		return nil
-	case user.FieldVersion:
-		m.ResetVersion()
 		return nil
 	case user.FieldCreatedAt:
 		m.ResetCreatedAt()

@@ -250,20 +250,6 @@ func (_c *SongCreate) SetNillableOwnerID(v *string) *SongCreate {
 	return _c
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_c *SongCreate) SetIsDeleted(v bool) *SongCreate {
-	_c.mutation.SetIsDeleted(v)
-	return _c
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_c *SongCreate) SetNillableIsDeleted(v *bool) *SongCreate {
-	if v != nil {
-		_c.SetIsDeleted(*v)
-	}
-	return _c
-}
-
 // SetVersion sets the "version" field.
 func (_c *SongCreate) SetVersion(v int64) *SongCreate {
 	_c.mutation.SetVersion(v)
@@ -274,6 +260,20 @@ func (_c *SongCreate) SetVersion(v int64) *SongCreate {
 func (_c *SongCreate) SetNillableVersion(v *int64) *SongCreate {
 	if v != nil {
 		_c.SetVersion(*v)
+	}
+	return _c
+}
+
+// SetIsDeleted sets the "is_deleted" field.
+func (_c *SongCreate) SetIsDeleted(v bool) *SongCreate {
+	_c.mutation.SetIsDeleted(v)
+	return _c
+}
+
+// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
+func (_c *SongCreate) SetNillableIsDeleted(v *bool) *SongCreate {
+	if v != nil {
+		_c.SetIsDeleted(*v)
 	}
 	return _c
 }
@@ -395,13 +395,13 @@ func (_c *SongCreate) defaults() {
 		v := song.DefaultOwnerID
 		_c.mutation.SetOwnerID(v)
 	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		v := song.DefaultIsDeleted
-		_c.mutation.SetIsDeleted(v)
-	}
 	if _, ok := _c.mutation.Version(); !ok {
 		v := song.DefaultVersion
 		_c.mutation.SetVersion(v)
+	}
+	if _, ok := _c.mutation.IsDeleted(); !ok {
+		v := song.DefaultIsDeleted
+		_c.mutation.SetIsDeleted(v)
 	}
 }
 
@@ -493,11 +493,11 @@ func (_c *SongCreate) check() error {
 	if _, ok := _c.mutation.OwnerID(); !ok {
 		return &ValidationError{Name: "owner_id", err: errors.New(`ent: missing required field "Song.owner_id"`)}
 	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		return &ValidationError{Name: "is_deleted", err: errors.New(`ent: missing required field "Song.is_deleted"`)}
-	}
 	if _, ok := _c.mutation.Version(); !ok {
 		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Song.version"`)}
+	}
+	if _, ok := _c.mutation.IsDeleted(); !ok {
+		return &ValidationError{Name: "is_deleted", err: errors.New(`ent: missing required field "Song.is_deleted"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Song.created_at"`)}
@@ -608,13 +608,13 @@ func (_c *SongCreate) createSpec() (*Song, *sqlgraph.CreateSpec) {
 		_spec.SetField(song.FieldOwnerID, field.TypeString, value)
 		_node.OwnerID = value
 	}
-	if value, ok := _c.mutation.IsDeleted(); ok {
-		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
-		_node.IsDeleted = value
-	}
 	if value, ok := _c.mutation.Version(); ok {
 		_spec.SetField(song.FieldVersion, field.TypeInt64, value)
 		_node.Version = value
+	}
+	if value, ok := _c.mutation.IsDeleted(); ok {
+		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
+		_node.IsDeleted = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(song.FieldCreatedAt, field.TypeTime, value)

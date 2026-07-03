@@ -29,10 +29,10 @@ type SyncLog struct {
 	Version int64 `json:"version,omitempty"`
 	// Data holds the value of the "data" field.
 	Data []byte `json:"data,omitempty"`
-	// Timestamp holds the value of the "timestamp" field.
-	Timestamp time.Time `json:"timestamp,omitempty"`
 	// Acked holds the value of the "acked" field.
-	Acked        bool `json:"acked,omitempty"`
+	Acked bool `json:"acked,omitempty"`
+	// Timestamp holds the value of the "timestamp" field.
+	Timestamp    time.Time `json:"timestamp,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -108,17 +108,17 @@ func (_m *SyncLog) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.Data = *value
 			}
-		case synclog.FieldTimestamp:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field timestamp", values[i])
-			} else if value.Valid {
-				_m.Timestamp = value.Time
-			}
 		case synclog.FieldAcked:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field acked", values[i])
 			} else if value.Valid {
 				_m.Acked = value.Bool
+			}
+		case synclog.FieldTimestamp:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field timestamp", values[i])
+			} else if value.Valid {
+				_m.Timestamp = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -174,11 +174,11 @@ func (_m *SyncLog) String() string {
 	builder.WriteString("data=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Data))
 	builder.WriteString(", ")
-	builder.WriteString("timestamp=")
-	builder.WriteString(_m.Timestamp.Format(time.ANSIC))
-	builder.WriteString(", ")
 	builder.WriteString("acked=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Acked))
+	builder.WriteString(", ")
+	builder.WriteString("timestamp=")
+	builder.WriteString(_m.Timestamp.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

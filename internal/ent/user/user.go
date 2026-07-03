@@ -19,10 +19,6 @@ const (
 	FieldPasswordHash = "password_hash"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
-	// FieldIsDeleted holds the string denoting the is_deleted field in the database.
-	FieldIsDeleted = "is_deleted"
-	// FieldVersion holds the string denoting the version field in the database.
-	FieldVersion = "version"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -38,8 +34,6 @@ var Columns = []string{
 	FieldDisplayName,
 	FieldPasswordHash,
 	FieldRole,
-	FieldIsDeleted,
-	FieldVersion,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -63,10 +57,6 @@ var (
 	DisplayNameValidator func(string) error
 	// DefaultRole holds the default value on creation for the "role" field.
 	DefaultRole string
-	// DefaultIsDeleted holds the default value on creation for the "is_deleted" field.
-	DefaultIsDeleted bool
-	// DefaultVersion holds the default value on creation for the "version" field.
-	DefaultVersion int64
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -95,16 +85,6 @@ func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 // ByRole orders the results by the role field.
 func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
-}
-
-// ByIsDeleted orders the results by the is_deleted field.
-func ByIsDeleted(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsDeleted, opts...).ToFunc()
-}
-
-// ByVersion orders the results by the version field.
-func ByVersion(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

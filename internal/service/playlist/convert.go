@@ -19,7 +19,7 @@ func EntToProto(p *ent.Playlist) *playlistpb.Playlist {
 		CoverUrl:    p.CoverURL,
 		OwnerId:     p.OwnerID,
 		IsPublic:    p.IsPublic,
-		SongCount:   p.SongCount,
+		SongCount:   int32(p.SongCount),
 		Version:     p.Version,
 		CreatedAt:   convert.PTime(p.CreatedAt),
 		UpdatedAt:   convert.PTime(p.UpdatedAt),

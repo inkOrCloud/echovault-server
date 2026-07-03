@@ -315,20 +315,6 @@ func (_u *SongUpdate) SetNillableOwnerID(v *string) *SongUpdate {
 	return _u
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *SongUpdate) SetIsDeleted(v bool) *SongUpdate {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *SongUpdate) SetNillableIsDeleted(v *bool) *SongUpdate {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
-	return _u
-}
-
 // SetVersion sets the "version" field.
 func (_u *SongUpdate) SetVersion(v int64) *SongUpdate {
 	_u.mutation.ResetVersion()
@@ -347,6 +333,20 @@ func (_u *SongUpdate) SetNillableVersion(v *int64) *SongUpdate {
 // AddVersion adds value to the "version" field.
 func (_u *SongUpdate) AddVersion(v int64) *SongUpdate {
 	_u.mutation.AddVersion(v)
+	return _u
+}
+
+// SetIsDeleted sets the "is_deleted" field.
+func (_u *SongUpdate) SetIsDeleted(v bool) *SongUpdate {
+	_u.mutation.SetIsDeleted(v)
+	return _u
+}
+
+// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
+func (_u *SongUpdate) SetNillableIsDeleted(v *bool) *SongUpdate {
+	if v != nil {
+		_u.SetIsDeleted(*v)
+	}
 	return _u
 }
 
@@ -534,14 +534,14 @@ func (_u *SongUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.OwnerID(); ok {
 		_spec.SetField(song.FieldOwnerID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(song.FieldVersion, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedVersion(); ok {
 		_spec.AddField(song.FieldVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsDeleted(); ok {
+		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(song.FieldCreatedAt, field.TypeTime, value)
@@ -856,20 +856,6 @@ func (_u *SongUpdateOne) SetNillableOwnerID(v *string) *SongUpdateOne {
 	return _u
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *SongUpdateOne) SetIsDeleted(v bool) *SongUpdateOne {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *SongUpdateOne) SetNillableIsDeleted(v *bool) *SongUpdateOne {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
-	return _u
-}
-
 // SetVersion sets the "version" field.
 func (_u *SongUpdateOne) SetVersion(v int64) *SongUpdateOne {
 	_u.mutation.ResetVersion()
@@ -888,6 +874,20 @@ func (_u *SongUpdateOne) SetNillableVersion(v *int64) *SongUpdateOne {
 // AddVersion adds value to the "version" field.
 func (_u *SongUpdateOne) AddVersion(v int64) *SongUpdateOne {
 	_u.mutation.AddVersion(v)
+	return _u
+}
+
+// SetIsDeleted sets the "is_deleted" field.
+func (_u *SongUpdateOne) SetIsDeleted(v bool) *SongUpdateOne {
+	_u.mutation.SetIsDeleted(v)
+	return _u
+}
+
+// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
+func (_u *SongUpdateOne) SetNillableIsDeleted(v *bool) *SongUpdateOne {
+	if v != nil {
+		_u.SetIsDeleted(*v)
+	}
 	return _u
 }
 
@@ -1105,14 +1105,14 @@ func (_u *SongUpdateOne) sqlSave(ctx context.Context) (_node *Song, err error) {
 	if value, ok := _u.mutation.OwnerID(); ok {
 		_spec.SetField(song.FieldOwnerID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
-	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(song.FieldVersion, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedVersion(); ok {
 		_spec.AddField(song.FieldVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsDeleted(); ok {
+		_spec.SetField(song.FieldIsDeleted, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(song.FieldCreatedAt, field.TypeTime, value)

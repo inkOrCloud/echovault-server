@@ -60,23 +60,9 @@ func (_c *PlaylistSongCreate) SetNillableAddedBy(v *string) *PlaylistSongCreate 
 	return _c
 }
 
-// SetVersion sets the "version" field.
-func (_c *PlaylistSongCreate) SetVersion(v int64) *PlaylistSongCreate {
-	_c.mutation.SetVersion(v)
-	return _c
-}
-
-// SetNillableVersion sets the "version" field if the given value is not nil.
-func (_c *PlaylistSongCreate) SetNillableVersion(v *int64) *PlaylistSongCreate {
-	if v != nil {
-		_c.SetVersion(*v)
-	}
-	return _c
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (_c *PlaylistSongCreate) SetCreatedAt(v time.Time) *PlaylistSongCreate {
-	_c.mutation.SetCreatedAt(v)
+// SetAddedAt sets the "added_at" field.
+func (_c *PlaylistSongCreate) SetAddedAt(v time.Time) *PlaylistSongCreate {
+	_c.mutation.SetAddedAt(v)
 	return _c
 }
 
@@ -129,10 +115,6 @@ func (_c *PlaylistSongCreate) defaults() {
 		v := playlistsong.DefaultAddedBy
 		_c.mutation.SetAddedBy(v)
 	}
-	if _, ok := _c.mutation.Version(); !ok {
-		v := playlistsong.DefaultVersion
-		_c.mutation.SetVersion(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -149,11 +131,8 @@ func (_c *PlaylistSongCreate) check() error {
 	if _, ok := _c.mutation.AddedBy(); !ok {
 		return &ValidationError{Name: "added_by", err: errors.New(`ent: missing required field "PlaylistSong.added_by"`)}
 	}
-	if _, ok := _c.mutation.Version(); !ok {
-		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "PlaylistSong.version"`)}
-	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "PlaylistSong.created_at"`)}
+	if _, ok := _c.mutation.AddedAt(); !ok {
+		return &ValidationError{Name: "added_at", err: errors.New(`ent: missing required field "PlaylistSong.added_at"`)}
 	}
 	return nil
 }
@@ -206,13 +185,9 @@ func (_c *PlaylistSongCreate) createSpec() (*PlaylistSong, *sqlgraph.CreateSpec)
 		_spec.SetField(playlistsong.FieldAddedBy, field.TypeString, value)
 		_node.AddedBy = value
 	}
-	if value, ok := _c.mutation.Version(); ok {
-		_spec.SetField(playlistsong.FieldVersion, field.TypeInt64, value)
-		_node.Version = value
-	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
-		_spec.SetField(playlistsong.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
+	if value, ok := _c.mutation.AddedAt(); ok {
+		_spec.SetField(playlistsong.FieldAddedAt, field.TypeTime, value)
+		_node.AddedAt = value
 	}
 	return _node, _spec
 }

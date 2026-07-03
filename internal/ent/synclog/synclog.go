@@ -23,10 +23,10 @@ const (
 	FieldVersion = "version"
 	// FieldData holds the string denoting the data field in the database.
 	FieldData = "data"
-	// FieldTimestamp holds the string denoting the timestamp field in the database.
-	FieldTimestamp = "timestamp"
 	// FieldAcked holds the string denoting the acked field in the database.
 	FieldAcked = "acked"
+	// FieldTimestamp holds the string denoting the timestamp field in the database.
+	FieldTimestamp = "timestamp"
 	// Table holds the table name of the synclog in the database.
 	Table = "sync_logs"
 )
@@ -40,8 +40,8 @@ var Columns = []string{
 	FieldAction,
 	FieldVersion,
 	FieldData,
-	FieldTimestamp,
 	FieldAcked,
+	FieldTimestamp,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -92,12 +92,12 @@ func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
-// ByTimestamp orders the results by the timestamp field.
-func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
-}
-
 // ByAcked orders the results by the acked field.
 func ByAcked(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAcked, opts...).ToFunc()
+}
+
+// ByTimestamp orders the results by the timestamp field.
+func ByTimestamp(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTimestamp, opts...).ToFunc()
 }

@@ -119,20 +119,6 @@ func (_u *LyricUpdate) SetNillableSource(v *string) *LyricUpdate {
 	return _u
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *LyricUpdate) SetIsDeleted(v bool) *LyricUpdate {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *LyricUpdate) SetNillableIsDeleted(v *bool) *LyricUpdate {
-	if v != nil {
-		_u.SetIsDeleted(*v)
-	}
-	return _u
-}
-
 // SetVersion sets the "version" field.
 func (_u *LyricUpdate) SetVersion(v int64) *LyricUpdate {
 	_u.mutation.ResetVersion()
@@ -243,9 +229,6 @@ func (_u *LyricUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(lyric.FieldSource, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(lyric.FieldIsDeleted, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(lyric.FieldVersion, field.TypeInt64, value)
@@ -366,20 +349,6 @@ func (_u *LyricUpdateOne) SetSource(v string) *LyricUpdateOne {
 func (_u *LyricUpdateOne) SetNillableSource(v *string) *LyricUpdateOne {
 	if v != nil {
 		_u.SetSource(*v)
-	}
-	return _u
-}
-
-// SetIsDeleted sets the "is_deleted" field.
-func (_u *LyricUpdateOne) SetIsDeleted(v bool) *LyricUpdateOne {
-	_u.mutation.SetIsDeleted(v)
-	return _u
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_u *LyricUpdateOne) SetNillableIsDeleted(v *bool) *LyricUpdateOne {
-	if v != nil {
-		_u.SetIsDeleted(*v)
 	}
 	return _u
 }
@@ -524,9 +493,6 @@ func (_u *LyricUpdateOne) sqlSave(ctx context.Context) (_node *Lyric, err error)
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(lyric.FieldSource, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.IsDeleted(); ok {
-		_spec.SetField(lyric.FieldIsDeleted, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Version(); ok {
 		_spec.SetField(lyric.FieldVersion, field.TypeInt64, value)

@@ -94,14 +94,14 @@ func Data(v []byte) predicate.SyncLog {
 	return predicate.SyncLog(sql.FieldEQ(FieldData, v))
 }
 
-// Timestamp applies equality check predicate on the "timestamp" field. It's identical to TimestampEQ.
-func Timestamp(v time.Time) predicate.SyncLog {
-	return predicate.SyncLog(sql.FieldEQ(FieldTimestamp, v))
-}
-
 // Acked applies equality check predicate on the "acked" field. It's identical to AckedEQ.
 func Acked(v bool) predicate.SyncLog {
 	return predicate.SyncLog(sql.FieldEQ(FieldAcked, v))
+}
+
+// Timestamp applies equality check predicate on the "timestamp" field. It's identical to TimestampEQ.
+func Timestamp(v time.Time) predicate.SyncLog {
+	return predicate.SyncLog(sql.FieldEQ(FieldTimestamp, v))
 }
 
 // DeviceIDEQ applies the EQ predicate on the "device_id" field.
@@ -454,6 +454,16 @@ func DataNotNil() predicate.SyncLog {
 	return predicate.SyncLog(sql.FieldNotNull(FieldData))
 }
 
+// AckedEQ applies the EQ predicate on the "acked" field.
+func AckedEQ(v bool) predicate.SyncLog {
+	return predicate.SyncLog(sql.FieldEQ(FieldAcked, v))
+}
+
+// AckedNEQ applies the NEQ predicate on the "acked" field.
+func AckedNEQ(v bool) predicate.SyncLog {
+	return predicate.SyncLog(sql.FieldNEQ(FieldAcked, v))
+}
+
 // TimestampEQ applies the EQ predicate on the "timestamp" field.
 func TimestampEQ(v time.Time) predicate.SyncLog {
 	return predicate.SyncLog(sql.FieldEQ(FieldTimestamp, v))
@@ -492,16 +502,6 @@ func TimestampLT(v time.Time) predicate.SyncLog {
 // TimestampLTE applies the LTE predicate on the "timestamp" field.
 func TimestampLTE(v time.Time) predicate.SyncLog {
 	return predicate.SyncLog(sql.FieldLTE(FieldTimestamp, v))
-}
-
-// AckedEQ applies the EQ predicate on the "acked" field.
-func AckedEQ(v bool) predicate.SyncLog {
-	return predicate.SyncLog(sql.FieldEQ(FieldAcked, v))
-}
-
-// AckedNEQ applies the NEQ predicate on the "acked" field.
-func AckedNEQ(v bool) predicate.SyncLog {
-	return predicate.SyncLog(sql.FieldNEQ(FieldAcked, v))
 }
 
 // And groups predicates with the AND operator between them.

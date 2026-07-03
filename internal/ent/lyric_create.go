@@ -88,20 +88,6 @@ func (_c *LyricCreate) SetNillableSource(v *string) *LyricCreate {
 	return _c
 }
 
-// SetIsDeleted sets the "is_deleted" field.
-func (_c *LyricCreate) SetIsDeleted(v bool) *LyricCreate {
-	_c.mutation.SetIsDeleted(v)
-	return _c
-}
-
-// SetNillableIsDeleted sets the "is_deleted" field if the given value is not nil.
-func (_c *LyricCreate) SetNillableIsDeleted(v *bool) *LyricCreate {
-	if v != nil {
-		_c.SetIsDeleted(*v)
-	}
-	return _c
-}
-
 // SetVersion sets the "version" field.
 func (_c *LyricCreate) SetVersion(v int64) *LyricCreate {
 	_c.mutation.SetVersion(v)
@@ -185,10 +171,6 @@ func (_c *LyricCreate) defaults() {
 		v := lyric.DefaultSource
 		_c.mutation.SetSource(v)
 	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		v := lyric.DefaultIsDeleted
-		_c.mutation.SetIsDeleted(v)
-	}
 	if _, ok := _c.mutation.Version(); !ok {
 		v := lyric.DefaultVersion
 		_c.mutation.SetVersion(v)
@@ -214,9 +196,6 @@ func (_c *LyricCreate) check() error {
 	}
 	if _, ok := _c.mutation.Source(); !ok {
 		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Lyric.source"`)}
-	}
-	if _, ok := _c.mutation.IsDeleted(); !ok {
-		return &ValidationError{Name: "is_deleted", err: errors.New(`ent: missing required field "Lyric.is_deleted"`)}
 	}
 	if _, ok := _c.mutation.Version(); !ok {
 		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Lyric.version"`)}
@@ -285,10 +264,6 @@ func (_c *LyricCreate) createSpec() (*Lyric, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(lyric.FieldSource, field.TypeString, value)
 		_node.Source = value
-	}
-	if value, ok := _c.mutation.IsDeleted(); ok {
-		_spec.SetField(lyric.FieldIsDeleted, field.TypeBool, value)
-		_node.IsDeleted = value
 	}
 	if value, ok := _c.mutation.Version(); ok {
 		_spec.SetField(lyric.FieldVersion, field.TypeInt64, value)

@@ -43,9 +43,8 @@ var (
 		{Name: "type", Type: field.TypeString, Default: "original"},
 		{Name: "language", Type: field.TypeString, Default: ""},
 		{Name: "offset_ms", Type: field.TypeInt32, Default: 0},
-		{Name: "source", Type: field.TypeString, Default: "manual"},
-		{Name: "is_deleted", Type: field.TypeBool, Default: false},
-		{Name: "version", Type: field.TypeInt64, Default: 0},
+		{Name: "source", Type: field.TypeString, Default: ""},
+		{Name: "version", Type: field.TypeInt64, Default: 1},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -56,9 +55,9 @@ var (
 		PrimaryKey: []*schema.Column{LyricsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "lyric_song_id",
-				Unique:  false,
-				Columns: []*schema.Column{LyricsColumns[1]},
+				Name:    "lyric_song_id_type_language",
+				Unique:  true,
+				Columns: []*schema.Column{LyricsColumns[1], LyricsColumns[3], LyricsColumns[4]},
 			},
 		},
 	}
@@ -68,12 +67,10 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 256},
 		{Name: "description", Type: field.TypeString, Size: 1024, Default: ""},
 		{Name: "cover_url", Type: field.TypeString, Default: ""},
-		{Name: "type", Type: field.TypeString, Default: "user"},
 		{Name: "owner_id", Type: field.TypeString},
 		{Name: "is_public", Type: field.TypeBool, Default: false},
-		{Name: "song_count", Type: field.TypeInt32, Default: 0},
-		{Name: "is_deleted", Type: field.TypeBool, Default: false},
-		{Name: "version", Type: field.TypeInt64, Default: 0},
+		{Name: "song_count", Type: field.TypeInt, Default: 0},
+		{Name: "version", Type: field.TypeInt64, Default: 1},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -82,6 +79,13 @@ var (
 		Name:       "playlists",
 		Columns:    PlaylistsColumns,
 		PrimaryKey: []*schema.Column{PlaylistsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "playlist_owner_id",
+				Unique:  false,
+				Columns: []*schema.Column{PlaylistsColumns[4]},
+			},
+		},
 	}
 	// PlaylistSongsColumns holds the columns for the "playlist_songs" table.
 	PlaylistSongsColumns = []*schema.Column{
@@ -90,8 +94,7 @@ var (
 		{Name: "song_id", Type: field.TypeString},
 		{Name: "position", Type: field.TypeInt32, Default: 0},
 		{Name: "added_by", Type: field.TypeString, Default: ""},
-		{Name: "version", Type: field.TypeInt64, Default: 0},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "added_at", Type: field.TypeTime},
 	}
 	// PlaylistSongsTable holds the schema information for the "playlist_songs" table.
 	PlaylistSongsTable = &schema.Table{
@@ -105,9 +108,9 @@ var (
 				Columns: []*schema.Column{PlaylistSongsColumns[1], PlaylistSongsColumns[2]},
 			},
 			{
-				Name:    "playlistsong_playlist_id_position",
+				Name:    "playlistsong_playlist_id",
 				Unique:  false,
-				Columns: []*schema.Column{PlaylistSongsColumns[1], PlaylistSongsColumns[3]},
+				Columns: []*schema.Column{PlaylistSongsColumns[1]},
 			},
 		},
 	}
@@ -131,8 +134,8 @@ var (
 		{Name: "source", Type: field.TypeString, Default: "local"},
 		{Name: "file_status", Type: field.TypeString, Default: "local_only"},
 		{Name: "owner_id", Type: field.TypeString, Default: ""},
+		{Name: "version", Type: field.TypeInt64, Default: 1},
 		{Name: "is_deleted", Type: field.TypeBool, Default: false},
-		{Name: "version", Type: field.TypeInt64, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -152,11 +155,6 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{SongsColumns[17]},
 			},
-			{
-				Name:    "song_title_artist",
-				Unique:  false,
-				Columns: []*schema.Column{SongsColumns[1], SongsColumns[2]},
-			},
 		},
 	}
 	// SyncLogsColumns holds the columns for the "sync_logs" table.
@@ -168,8 +166,8 @@ var (
 		{Name: "action", Type: field.TypeString},
 		{Name: "version", Type: field.TypeInt64},
 		{Name: "data", Type: field.TypeBytes, Nullable: true},
-		{Name: "timestamp", Type: field.TypeTime},
 		{Name: "acked", Type: field.TypeBool, Default: false},
+		{Name: "timestamp", Type: field.TypeTime},
 	}
 	// SyncLogsTable holds the schema information for the "sync_logs" table.
 	SyncLogsTable = &schema.Table{
@@ -178,14 +176,19 @@ var (
 		PrimaryKey: []*schema.Column{SyncLogsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "synclog_device_id_version",
+				Name:    "synclog_version",
 				Unique:  false,
-				Columns: []*schema.Column{SyncLogsColumns[1], SyncLogsColumns[5]},
+				Columns: []*schema.Column{SyncLogsColumns[5]},
 			},
 			{
-				Name:    "synclog_acked",
+				Name:    "synclog_entity_type_entity_id",
 				Unique:  false,
-				Columns: []*schema.Column{SyncLogsColumns[8]},
+				Columns: []*schema.Column{SyncLogsColumns[2], SyncLogsColumns[3]},
+			},
+			{
+				Name:    "synclog_device_id",
+				Unique:  false,
+				Columns: []*schema.Column{SyncLogsColumns[1]},
 			},
 		},
 	}
@@ -196,8 +199,6 @@ var (
 		{Name: "display_name", Type: field.TypeString, Size: 128, Default: ""},
 		{Name: "password_hash", Type: field.TypeString},
 		{Name: "role", Type: field.TypeString, Default: "user"},
-		{Name: "is_deleted", Type: field.TypeBool, Default: false},
-		{Name: "version", Type: field.TypeInt64, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -206,13 +207,6 @@ var (
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "user_username",
-				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[1]},
-			},
-		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
