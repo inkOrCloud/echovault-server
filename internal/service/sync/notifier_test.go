@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	syncsvc "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	syncsvc "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
 )
 
 func TestSubscribeAndNotify(t *testing.T) {

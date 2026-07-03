@@ -6,12 +6,11 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
-
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/playlist"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 )
 
 func newTestClient(t *testing.T) *ent.Client {

@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
-
-	syncsvc "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	syncsvc "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
+	"github.com/stretchr/testify/require"
 )
 
 const testDeviceID = "dev-001"
@@ -57,8 +56,8 @@ func TestPushChanges_Conflict(t *testing.T) {
 
 	_, err = svc.PushChanges(ctx, "dev-002", 0, []*syncpb.SyncChange{{
 		EntityType: testEntityType, EntityId: songID, DeviceId: "dev-002",
-		Action: syncpb.SyncChange_ACTION_UPDATE,
-		Version:    0,
+		Action:  syncpb.SyncChange_ACTION_UPDATE,
+		Version: 0,
 	}})
 	require.NoError(t, err)
 }

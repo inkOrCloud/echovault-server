@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/synclog"
-	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 )
 
 // ChangeLogger persists sync changes to the database.
