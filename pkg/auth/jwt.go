@@ -13,7 +13,7 @@ import (
 // Sentinel errors for JWT operations.
 var (
 	ErrUnexpectedSigningMethod = errors.New("unexpected signing method")
-	ErrInvalidTokenClaims     = errors.New("invalid token claims")
+	ErrInvalidTokenClaims      = errors.New("invalid token claims")
 )
 
 // Claims represents JWT claims for EchoVault.
