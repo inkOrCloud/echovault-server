@@ -27,7 +27,7 @@ func NewSongHandler(svc *song.Service) *SongHandler {
 func (h *SongHandler) CheckSongsByHash(ctx context.Context, req *songpb.CheckSongsByHashRequest) (*songpb.CheckSongsByHashResponse, error) {
 	results, err := h.svc.CheckSongsByHash(ctx, req.GetFileHashes())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	pbResults := make([]*songpb.CheckSongsByHashResponse_Result, len(results))
 	for i, r := range results {
@@ -44,7 +44,7 @@ func (h *SongHandler) CheckSongsByHash(ctx context.Context, req *songpb.CheckSon
 func (h *SongHandler) PublishSong(ctx context.Context, req *songpb.PublishSongRequest) (*songpb.PublishSongResponse, error) {
 	s, err := h.svc.PublishSong(ctx, req)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &songpb.PublishSongResponse{Song: s}, nil
 }
@@ -53,7 +53,7 @@ func (h *SongHandler) PublishSong(ctx context.Context, req *songpb.PublishSongRe
 func (h *SongHandler) GetSong(ctx context.Context, req *songpb.GetSongRequest) (*songpb.GetSongResponse, error) {
 	s, err := h.svc.GetSong(ctx, req.GetId())
 	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &songpb.GetSongResponse{Song: s}, nil
 }
@@ -62,7 +62,7 @@ func (h *SongHandler) GetSong(ctx context.Context, req *songpb.GetSongRequest) (
 func (h *SongHandler) SearchSongs(ctx context.Context, req *songpb.SearchSongsRequest) (*songpb.SearchSongsResponse, error) {
 	songs, err := h.svc.SearchSongs(ctx, req.GetQuery(), int(req.GetPagination().GetPageSize()))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &songpb.SearchSongsResponse{Songs: songs}, nil
 }
@@ -75,7 +75,7 @@ func (h *SongHandler) ListSongs(ctx context.Context, req *songpb.ListSongsReques
 	}
 	songs, err := h.svc.ListSongs(ctx, limit, 0)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &songpb.ListSongsResponse{Songs: songs}, nil
 }
