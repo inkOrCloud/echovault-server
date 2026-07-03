@@ -1,3 +1,4 @@
+// Package rest provides REST API handlers for file upload/download operations.
 package rest
 
 import (
@@ -9,13 +10,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/metadata"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/storage"
 )
 
 const errField = "error"
-
 
 // Handler handles REST file requests.
 type Handler struct {
@@ -65,7 +64,8 @@ func (h *Handler) handleUpload(c *gin.Context) {
 
 	switch fileType {
 	case "audio":
-		if err := h.handleAudioUpload(c, songID, file, header.Filename, header.Size); err != nil {
+		err := h.handleAudioUpload(c, songID, file, header.Filename, header.Size)
+		if err != nil {
 			return // response already written
 		}
 	case "cover":
@@ -86,7 +86,7 @@ func (h *Handler) handleAudioUpload(c *gin.Context, songID string, file io.Reade
 	tmpFile, err := os.CreateTemp("", "echovault-upload-*"+filepath.Ext(fileName))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{errField: "create temp file: " + err.Error()})
-		return err
+		return fmt.Errorf("create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
 	defer func() { _ = os.Remove(tmpPath) }()
@@ -95,7 +95,7 @@ func (h *Handler) handleAudioUpload(c *gin.Context, songID string, file io.Reade
 	_ = tmpFile.Close()
 	if copyErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{errField: "save temp file: " + copyErr.Error()})
-		return copyErr
+		return fmt.Errorf("save temp file: %w", copyErr)
 	}
 
 	meta, _ := metadata.ParseFile(tmpPath)
@@ -103,14 +103,14 @@ func (h *Handler) handleAudioUpload(c *gin.Context, songID string, file io.Reade
 	tmpForRead, err := os.Open(tmpPath) //nolint:gosec // tmpPath is from os.CreateTemp
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{errField: "open temp file: " + err.Error()})
-		return err
+		return fmt.Errorf("open temp file: %w", err)
 	}
 	defer func() { _ = tmpForRead.Close() }()
 
 	saveErr := h.Storage.SaveAudio(c.Request.Context(), songID, fileName, tmpForRead)
 	if saveErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{errField: "save audio: " + saveErr.Error()})
-		return saveErr
+		return fmt.Errorf("save audio: %w", saveErr)
 	}
 
 	if meta != nil && meta.Picture != nil {
