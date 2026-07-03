@@ -22,10 +22,12 @@ func TestNewLocalStorage_CreatesDirs(t *testing.T) {
 	if s == nil {
 		t.Fatal("NewLocalStorage() = nil, want non-nil")
 	}
-	if _, err := os.Stat(filepath.Join(tmpDir, "songs")); os.IsNotExist(err) {
+	_, err = os.Stat(filepath.Join(tmpDir, "songs"))
+	if os.IsNotExist(err) {
 		t.Error("songs/ directory not created")
 	}
-	if _, err := os.Stat(filepath.Join(tmpDir, "covers")); os.IsNotExist(err) {
+	_, err = os.Stat(filepath.Join(tmpDir, "covers"))
+	if os.IsNotExist(err) {
 		t.Error("covers/ directory not created")
 	}
 }
@@ -41,7 +43,8 @@ func TestSaveAndGetAudio(t *testing.T) {
 	songID := "test-song-123"
 	content := "fake audio binary content"
 
-	if err := s.SaveAudio(ctx, songID, "song.mp3", strings.NewReader(content)); err != nil {
+	err = s.SaveAudio(ctx, songID, "song.mp3", strings.NewReader(content))
+	if err != nil {
 		t.Fatalf("SaveAudio() error = %v", err)
 	}
 
@@ -50,7 +53,8 @@ func TestSaveAndGetAudio(t *testing.T) {
 		t.Fatalf("GetAudio() error = %v", err)
 	}
 	defer func() {
-		if cerr := reader.Close(); cerr != nil {
+		cerr := reader.Close()
+		if cerr != nil {
 			t.Errorf("reader.Close() error = %v", cerr)
 		}
 	}()
@@ -96,7 +100,8 @@ func TestSaveAndGetCover(t *testing.T) {
 	songID := "cover-song-1"
 	coverContent := "fake jpeg bytes"
 
-	if err := s.SaveCover(ctx, songID, strings.NewReader(coverContent)); err != nil {
+	err = s.SaveCover(ctx, songID, strings.NewReader(coverContent))
+	if err != nil {
 		t.Fatalf("SaveCover() error = %v", err)
 	}
 
@@ -142,14 +147,17 @@ func TestDeleteSongFiles(t *testing.T) {
 	ctx := context.Background()
 	songID := "delete-song"
 
-	if err := s.SaveAudio(ctx, songID, "track.mp3", strings.NewReader("audio")); err != nil {
+	err = s.SaveAudio(ctx, songID, "track.mp3", strings.NewReader("audio"))
+	if err != nil {
 		t.Fatalf("SaveAudio: %v", err)
 	}
-	if err := s.SaveCover(ctx, songID, strings.NewReader("cover")); err != nil {
+	err = s.SaveCover(ctx, songID, strings.NewReader("cover"))
+	if err != nil {
 		t.Fatalf("SaveCover: %v", err)
 	}
 
-	if err := s.DeleteSongFiles(ctx, songID); err != nil {
+	err = s.DeleteSongFiles(ctx, songID)
+	if err != nil {
 		t.Fatalf("DeleteSongFiles() error = %v", err)
 	}
 
