@@ -45,6 +45,8 @@ func ProtoActionToEnt(pb syncpb.SyncChange_Action) string {
 		return "update"
 	case syncpb.SyncChange_ACTION_DELETE:
 		return "delete"
+	case syncpb.SyncChange_ACTION_UNSPECIFIED:
+		return "unknown"
 	default:
 		return "unknown"
 	}
