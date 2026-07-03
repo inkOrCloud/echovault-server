@@ -36,7 +36,8 @@ func Load() (*Config, error) {
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	err := viper.ReadInConfig()
+	if err != nil {
 		var configNotFound viper.ConfigFileNotFoundError
 		if !errors.As(err, &configNotFound) {
 			return nil, fmt.Errorf("read config: %w", err)
