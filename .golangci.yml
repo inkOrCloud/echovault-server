@@ -1,0 +1,47 @@
+version: "2"
+
+linters:
+  default: all
+  disable:
+    - wsl_v5
+    - varnamelen
+    - exhaustruct
+    - nlreturn
+    - gochecknoglobals
+    - gomodguard
+    - wsl
+    - paralleltest    # 并行测试需要改造，暂不强制
+    - tparallel       # 同上
+    - ireturn         # 返回接口在测试中很常见
+    - nolintlint      # nolint 注释格式过于严格
+    - tagliatelle     # struct tag 命名风格主观
+    - funlen          # 函数长度主观，测试中容易超
+    - cyclop          # 圈复杂度主观，测试中容易超
+    - dupl            # 测试辅助函数重复是正常的
+    - lll             # 行长度 120 太严
+    - prealloc        # slice 预分配不是必须的
+
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: false
+    errcheck:
+      check-blank: false   # 允许 _ = ...
+      check-type-assertions: false
+    wrapcheck:
+      ignorePackageGlobs:
+        - github.com/inkOrCloud/EchoVault/echovault-server/internal/ent*
+        - github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/**
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: "github.com/pkg/errors"
+              desc: "必须使用标准库 errors 或 fmt.Errorf"
+            - pkg: "github.com/sirupsen/logrus"
+              desc: "必须使用 slog 或 zerolog"
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - gci
