@@ -7,8 +7,11 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/auth"
 )
 
+const testSecret = "test-secret-key"
+
 func TestGenerateToken_Success(t *testing.T) {
-	secret := "test-secret-key"
+	t.Parallel()
+	secret := testSecret
 	userID := "user-123"
 	deviceID := "device-456"
 
@@ -22,11 +25,15 @@ func TestGenerateToken_Success(t *testing.T) {
 }
 
 func TestValidateToken_Valid(t *testing.T) {
-	secret := "test-secret-key"
+	t.Parallel()
+	secret := testSecret
 	userID := "user-123"
 	deviceID := "device-456"
 
-	token, _ := auth.GenerateToken(secret, userID, deviceID, 1*time.Hour)
+	token, err := auth.GenerateToken(secret, userID, deviceID, 1*time.Hour)
+	if err != nil {
+		t.Fatalf("GenerateToken() error = %v", err)
+	}
 
 	claims, err := auth.ValidateToken(secret, token)
 	if err != nil {
@@ -41,24 +48,33 @@ func TestValidateToken_Valid(t *testing.T) {
 }
 
 func TestValidateToken_Expired(t *testing.T) {
-	secret := "test-secret-key"
-	token, _ := auth.GenerateToken(secret, "user-1", "device-1", -1*time.Hour)
+	t.Parallel()
+	secret := testSecret
+	token, err := auth.GenerateToken(secret, "user-1", "device-1", -1*time.Hour)
+	if err != nil {
+		t.Fatalf("GenerateToken() error = %v", err)
+	}
 
-	_, err := auth.ValidateToken(secret, token)
+	_, err = auth.ValidateToken(secret, token)
 	if err == nil {
 		t.Fatal("ValidateToken() expected error for expired token")
 	}
 }
 
 func TestValidateToken_WrongSecret(t *testing.T) {
-	token, _ := auth.GenerateToken("secret-a", "user-1", "device-1", 1*time.Hour)
-	_, err := auth.ValidateToken("secret-b", token)
+	t.Parallel()
+	token, err := auth.GenerateToken("secret-a", "user-1", "device-1", 1*time.Hour)
+	if err != nil {
+		t.Fatalf("GenerateToken() error = %v", err)
+	}
+	_, err = auth.ValidateToken("secret-b", token)
 	if err == nil {
 		t.Fatal("ValidateToken() expected error for wrong secret")
 	}
 }
 
 func TestValidateToken_InvalidFormat(t *testing.T) {
+	t.Parallel()
 	_, err := auth.ValidateToken("secret", "not-a-jwt-token")
 	if err == nil {
 		t.Fatal("ValidateToken() expected error for invalid format")
@@ -66,6 +82,7 @@ func TestValidateToken_InvalidFormat(t *testing.T) {
 }
 
 func TestHashPassword_And_Compare(t *testing.T) {
+	t.Parallel()
 	password := "my-password-123"
 	hash, err := auth.HashPassword(password)
 	if err != nil {
