@@ -1,7 +1,16 @@
+// Package config provides application configuration loading.
 package config
 
-import "github.com/spf13/viper"
+import (
+	"errors"
+	"fmt"
 
+	"github.com/spf13/viper"
+)
+
+const defaultGRPCPort = 9090
+
+// Config holds application configuration.
 type Config struct {
 	GRPCPort    int
 	DBDriver    string
@@ -11,13 +20,14 @@ type Config struct {
 	JWTSecret   string
 }
 
+// Load reads configuration from file and environment.
 func Load() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/app")
 
-	viper.SetDefault("grpc_port", 9090)
+	viper.SetDefault("grpc_port", defaultGRPCPort)
 	viper.SetDefault("db_driver", "sqlite3")
 	viper.SetDefault("db_path", "data/echovault.db")
 	viper.SetDefault("storage_type", "local")
@@ -27,8 +37,9 @@ func Load() (*Config, error) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, err
+		var configNotFound viper.ConfigFileNotFoundError
+		if !errors.As(err, &configNotFound) {
+			return nil, fmt.Errorf("read config: %w", err)
 		}
 	}
 
