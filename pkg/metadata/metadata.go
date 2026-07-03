@@ -1,7 +1,9 @@
+// Package metadata provides audio file metadata parsing.
 package metadata
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -33,7 +35,6 @@ type AudioMetadata struct {
 	Picture     *Picture // embedded cover art, may be nil
 }
 
-// extToMIME maps file extensions to MIME types.
 var extToMIME = map[string]string{
 	".mp3":  "audio/mpeg",
 	".flac": "audio/flac",
@@ -52,9 +53,13 @@ func ParseFile(path string) (*AudioMetadata, error) {
 	if err != nil {
 		return nil, fmt.Errorf("metadata: open file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
-	return ParseReader(f, path)
+	meta, err := ParseReader(f, path)
+	if err != nil {
+		return nil, fmt.Errorf("metadata: parse reader: %w", err)
+	}
+	return meta, nil
 }
 
 // ParseReader reads audio metadata from an io.ReadSeeker.
@@ -64,31 +69,25 @@ func ParseReader(r io.ReadSeeker, filePath string) (*AudioMetadata, error) {
 		return nil, fmt.Errorf("metadata: read data: %w", err)
 	}
 
-	// SHA256 hash
 	hash := sha256.Sum256(data)
-	fileHash := fmt.Sprintf("%x", hash)
+	fileHash := hex.EncodeToString(hash[:])
 
-	// MIME type from extension
 	mime := MIMETypeByExt(filePath)
-
-	// File name
 	fileName := filepath.Base(filePath)
 
-	// Build base metadata (used if tag parsing fails)
 	meta := &AudioMetadata{
 		FileName: fileName,
 		FileHash: fileHash,
 		MIMEType: mime,
 	}
 
-	// Seek back to beginning for tag parsing
 	if _, err := r.Seek(0, io.SeekStart); err != nil {
-		return meta, nil // return basic info, don't crash on seek error
+		return meta, nil //nolint:nilerr // return basic info, don't crash on seek error
 	}
 
 	m, err := tag.ReadFrom(r)
 	if err != nil {
-		return meta, nil // return basic info on tag parse failure
+		return meta, nil //nolint:nilerr // return basic info on tag parse failure
 	}
 
 	meta.Title = m.Title()
@@ -115,7 +114,7 @@ func ParseReader(r io.ReadSeeker, filePath string) (*AudioMetadata, error) {
 	return meta, nil
 }
 
-// MIMETypeByExt returns the MIME type for a given file path based on its extension.
+// MIMETypeByExt returns the MIME type for a given file path.
 func MIMETypeByExt(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
 	if mime, ok := extToMIME[ext]; ok {
