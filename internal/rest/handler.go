@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -13,15 +14,17 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/storage"
 )
 
-// Handler 是 REST 文件服务处理器。
+const errField = "error"
+
+
+// Handler handles REST file requests.
 type Handler struct {
 	Storage     storage.Storage
 	SongUpdater SongUpdater
 	router      *gin.Engine
 }
 
-// NewHandler 创建 REST Handler。
-// songUpdater 可为 nil（此时不更新 Song 记录）。
+// NewHandler creates a REST Handler.
 func NewHandler(s storage.Storage, songUpdater SongUpdater) *Handler {
 	gin.SetMode(gin.ReleaseMode)
 	h := &Handler{Storage: s, SongUpdater: songUpdater}
@@ -40,6 +43,7 @@ func NewHandler(s storage.Storage, songUpdater SongUpdater) *Handler {
 	return h
 }
 
+// ServeHTTP dispatches to the gin router.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
@@ -48,75 +52,80 @@ func (h *Handler) handleUpload(c *gin.Context) {
 	fileType := c.Query("type")
 	songID := c.Query("song_id")
 	if fileType == "" || songID == "" {
-		c.JSON(400, gin.H{"error": "type and song_id required"})
+		c.JSON(http.StatusBadRequest, gin.H{errField: "type and song_id required"})
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{errField: err.Error()})
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	switch fileType {
 	case "audio":
-		// 保存到临时文件以便解析元数据
-		tmpFile, err := os.CreateTemp("", "echovault-upload-*"+filepath.Ext(header.Filename))
-		if err != nil {
-			c.JSON(500, gin.H{"error": "create temp file: " + err.Error()})
-			return
+		if err := h.handleAudioUpload(c, songID, file, header.Filename, header.Size); err != nil {
+			return // response already written
 		}
-		tmpPath := tmpFile.Name()
-		defer os.Remove(tmpPath)
-
-		if _, err := io.Copy(tmpFile, file); err != nil {
-			c.JSON(500, gin.H{"error": "save temp file: " + err.Error()})
-			return
-		}
-		tmpFile.Close()
-
-		// 解析元数据（失败时 meta 为 nil，不阻止上传）
-		meta, _ := metadata.ParseFile(tmpPath)
-
-		// 保存音频文件到持久存储
-		tmpForRead, err := os.Open(tmpPath)
-		if err != nil {
-			c.JSON(500, gin.H{"error": "open temp file: " + err.Error()})
-			return
-		}
-		defer tmpForRead.Close()
-
-		if err := h.Storage.SaveAudio(c.Request.Context(), songID, header.Filename, tmpForRead); err != nil {
-			c.JSON(500, gin.H{"error": "save audio: " + err.Error()})
-			return
-		}
-
-		// 如果有嵌入封面，保存到 Storage
-		if meta != nil && meta.Picture != nil {
-			coverReader := &pictureReader{data: meta.Picture.Data}
-			_ = h.Storage.SaveCover(c.Request.Context(), songID, coverReader)
-		}
-
-		// 补充 Song 记录中用户未填的字段
-		if h.SongUpdater != nil && meta != nil {
-			_ = h.SongUpdater.UpdateFromScan(songID, meta, header.Size)
-		}
-
 	case "cover":
-		if err := h.Storage.SaveCover(c.Request.Context(), songID, file); err != nil {
-			c.JSON(500, gin.H{"error": "save cover: " + err.Error()})
+		err := h.Storage.SaveCover(c.Request.Context(), songID, file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{errField: "save cover: " + err.Error()})
 			return
 		}
 	default:
-		c.JSON(400, gin.H{"error": "invalid type: " + fileType})
+		c.JSON(http.StatusBadRequest, gin.H{errField: "invalid type: " + fileType})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "ok"})
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// pictureReader 将 []byte 包装为 io.Reader，用于 Storage.SaveCover。
+func (h *Handler) handleAudioUpload(c *gin.Context, songID string, file io.Reader, fileName string, fileSize int64) error {
+	tmpFile, err := os.CreateTemp("", "echovault-upload-*"+filepath.Ext(fileName))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{errField: "create temp file: " + err.Error()})
+		return err
+	}
+	tmpPath := tmpFile.Name()
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	_, copyErr := io.Copy(tmpFile, file)
+	_ = tmpFile.Close()
+	if copyErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{errField: "save temp file: " + copyErr.Error()})
+		return copyErr
+	}
+
+	meta, _ := metadata.ParseFile(tmpPath)
+
+	tmpForRead, err := os.Open(tmpPath) //nolint:gosec // tmpPath is from os.CreateTemp
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{errField: "open temp file: " + err.Error()})
+		return err
+	}
+	defer func() { _ = tmpForRead.Close() }()
+
+	saveErr := h.Storage.SaveAudio(c.Request.Context(), songID, fileName, tmpForRead)
+	if saveErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{errField: "save audio: " + saveErr.Error()})
+		return saveErr
+	}
+
+	if meta != nil && meta.Picture != nil {
+		coverReader := &pictureReader{data: meta.Picture.Data}
+		_ = h.Storage.SaveCover(c.Request.Context(), songID, coverReader)
+	}
+
+	if h.SongUpdater != nil && meta != nil {
+		_ = h.SongUpdater.UpdateFromScan(songID, meta, fileSize)
+	}
+
+	return nil
+}
+
+// pictureReader wraps []byte as io.Reader.
 type pictureReader struct {
 	data   []byte
 	offset int
@@ -135,34 +144,35 @@ func (h *Handler) handleDownloadAudio(c *gin.Context) {
 	songID := c.Param("songID")
 	reader, size, err := h.Storage.GetAudio(c.Request.Context(), songID)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "audio not found"})
+		c.JSON(http.StatusNotFound, gin.H{errField: "audio not found"})
 		return
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	c.Header("Content-Type", "audio/mpeg")
 	c.Header("Content-Length", strconv.FormatInt(size, 10))
 	c.Header("Accept-Ranges", "bytes")
-	c.DataFromReader(200, size, "audio/mpeg", reader, nil)
+	c.DataFromReader(http.StatusOK, size, "audio/mpeg", reader, nil)
 }
 
 func (h *Handler) handleDownloadCover(c *gin.Context) {
 	songID := c.Param("songID")
 	reader, size, err := h.Storage.GetCover(c.Request.Context(), songID)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "cover not found"})
+		c.JSON(http.StatusNotFound, gin.H{errField: "cover not found"})
 		return
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
-	c.DataFromReader(200, size, "image/jpeg", reader, nil)
+	c.DataFromReader(http.StatusOK, size, "image/jpeg", reader, nil)
 }
 
 func (h *Handler) handleDelete(c *gin.Context) {
 	songID := c.Param("songID")
-	if err := h.Storage.DeleteSongFiles(c.Request.Context(), songID); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+	err := h.Storage.DeleteSongFiles(c.Request.Context(), songID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{errField: fmt.Sprintf("delete song: %v", err)})
 		return
 	}
-	c.JSON(200, gin.H{"status": "deleted"})
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }

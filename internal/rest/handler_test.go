@@ -16,7 +16,6 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/storage"
 )
 
-// mockSongUpdater 实现 rest.SongUpdater 接口，记录调用。
 type mockSongUpdater struct {
 	LastSongID string
 	LastHash   string
@@ -41,39 +40,35 @@ func newTestHandler(t *testing.T, updater rest.SongUpdater) *rest.Handler {
 	return rest.NewHandler(s, updater)
 }
 
-// buildTestMP3 构造带 ID3v2 标签 + 可选 APIC 封面的 MP3 文件。
 func buildTestMP3(t *testing.T, dir, title, artist string, coverData []byte) string {
 	t.Helper()
 	id3 := []byte("ID3\x04\x00\x00")
 	frames := []byte{}
 
-	// TIT2 frame
 	tBytes := append([]byte{0x03}, []byte(title)...)
 	frames = append(frames, "TIT2"...)
 	fSize := len(tBytes)
-	frames = append(frames, byte(fSize>>24), byte(fSize>>16), byte(fSize>>8), byte(fSize))
+	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
 	frames = append(frames, 0, 0)
 	frames = append(frames, tBytes...)
 
-	// TPE1 frame
 	aBytes := append([]byte{0x03}, []byte(artist)...)
 	frames = append(frames, "TPE1"...)
 	fSize = len(aBytes)
-	frames = append(frames, byte(fSize>>24), byte(fSize>>16), byte(fSize>>8), byte(fSize))
+	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
 	frames = append(frames, 0, 0)
 	frames = append(frames, aBytes...)
 
-	// APIC frame (cover art)
 	if coverData != nil {
 		apicBody := []byte{0x03}
 		apicBody = append(apicBody, "image/jpeg"...)
 		apicBody = append(apicBody, 0)
-		apicBody = append(apicBody, 0x03) // cover front
+		apicBody = append(apicBody, 0x03)
 		apicBody = append(apicBody, 0)
 		apicBody = append(apicBody, coverData...)
 		frames = append(frames, "APIC"...)
 		fSize = len(apicBody)
-		frames = append(frames, byte(fSize>>24), byte(fSize>>16), byte(fSize>>8), byte(fSize))
+		frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
 		frames = append(frames, 0, 0)
 		frames = append(frames, apicBody...)
 	}
@@ -87,22 +82,30 @@ func buildTestMP3(t *testing.T, dir, title, artist string, coverData []byte) str
 	id3 = append(id3, frames...)
 
 	path := filepath.Join(dir, "test.mp3")
-	if err := os.WriteFile(path, id3, 0644); err != nil {
+	if err := os.WriteFile(path, id3, 0o600); err != nil {
 		t.Fatalf("write mp3: %v", err)
 	}
 	return path
 }
 
 func TestUploadAudio_Basic(t *testing.T) {
+	t.Parallel()
 	h := newTestHandler(t, nil)
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	part, _ := w.CreateFormFile("file", "test.mp3")
-	part.Write([]byte("fake audio content"))
-	w.Close()
+	part, err := w.CreateFormFile("file", "test.mp3")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write([]byte("fake audio content")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=audio&song_id=s1", &buf)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=s1", &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	resp := httptest.NewRecorder()
 	h.ServeHTTP(resp, req)
@@ -115,19 +118,25 @@ func TestUploadAudio_Basic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAudio() error = %v", err)
 	}
-	defer reader.Close()
-	data, _ := io.ReadAll(reader)
+	defer func() { _ = reader.Close() }()
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
 	if size != int64(len(data)) {
 		t.Errorf("saved size = %d, want %d", size, len(data))
 	}
 }
 
 func TestDownloadAudio(t *testing.T) {
+	t.Parallel()
 	h := newTestHandler(t, nil)
 	ctx := context.Background()
-	h.Storage.SaveAudio(ctx, "s1", "track.mp3", strings.NewReader("audio data"))
+	if err := h.Storage.SaveAudio(ctx, "s1", "track.mp3", strings.NewReader("audio data")); err != nil {
+		t.Fatalf("SaveAudio: %v", err)
+	}
 
-	req := httptest.NewRequest("GET", "/api/v1/files/download/audio/s1", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/files/download/audio/s1", nil)
 	resp := httptest.NewRecorder()
 	h.ServeHTTP(resp, req)
 
@@ -140,15 +149,23 @@ func TestDownloadAudio(t *testing.T) {
 }
 
 func TestUploadCover(t *testing.T) {
+	t.Parallel()
 	h := newTestHandler(t, nil)
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	part, _ := w.CreateFormFile("file", "cover.jpg")
-	part.Write([]byte("cover bytes"))
-	w.Close()
+	part, err := w.CreateFormFile("file", "cover.jpg")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write([]byte("cover bytes")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=cover&song_id=s1", &buf)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=cover&song_id=s1", &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	resp := httptest.NewRecorder()
 	h.ServeHTTP(resp, req)
@@ -159,8 +176,9 @@ func TestUploadCover(t *testing.T) {
 }
 
 func TestUpload_MissingParams(t *testing.T) {
+	t.Parallel()
 	h := newTestHandler(t, nil)
-	req := httptest.NewRequest("POST", "/api/v1/files/upload", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload", nil)
 	resp := httptest.NewRecorder()
 	h.ServeHTTP(resp, req)
 
@@ -170,6 +188,7 @@ func TestUpload_MissingParams(t *testing.T) {
 }
 
 func TestUploadAudio_CallsUpdater(t *testing.T) {
+	t.Parallel()
 	updater := &mockSongUpdater{}
 	h := newTestHandler(t, updater)
 
@@ -178,12 +197,22 @@ func TestUploadAudio_CallsUpdater(t *testing.T) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	fw, _ := writer.CreateFormFile("file", "song.mp3")
-	mp3Data, _ := os.ReadFile(mp3Path)
-	fw.Write(mp3Data)
-	writer.Close()
+	fw, err := writer.CreateFormFile("file", "song.mp3")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	mp3Data, err := os.ReadFile(mp3Path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if _, err := fw.Write(mp3Data); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=audio&song_id=test-song-001", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=test-song-001", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -200,6 +229,7 @@ func TestUploadAudio_CallsUpdater(t *testing.T) {
 }
 
 func TestUploadAudio_WithCover_SavesCover(t *testing.T) {
+	t.Parallel()
 	s, err := storage.NewLocalStorage(t.TempDir())
 	if err != nil {
 		t.Fatalf("NewLocalStorage() error = %v", err)
@@ -212,12 +242,22 @@ func TestUploadAudio_WithCover_SavesCover(t *testing.T) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	fw, _ := writer.CreateFormFile("file", "cover-song.mp3")
-	mp3Data, _ := os.ReadFile(mp3Path)
-	fw.Write(mp3Data)
-	writer.Close()
+	fw, err := writer.CreateFormFile("file", "cover-song.mp3")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	mp3Data, err := os.ReadFile(mp3Path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if _, err := fw.Write(mp3Data); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=audio&song_id=test-cover-song", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=test-cover-song", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -226,32 +266,42 @@ func TestUploadAudio_WithCover_SavesCover(t *testing.T) {
 		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
 	}
 
-	// 验证封面已保存
 	coverReader, coverSize, err := s.GetCover(req.Context(), "test-cover-song")
 	if err != nil {
 		t.Fatalf("GetCover() error = %v (cover was not saved)", err)
 	}
-	defer coverReader.Close()
+	defer func() { _ = coverReader.Close() }()
 
 	if coverSize != int64(len(coverData)) {
 		t.Errorf("cover size = %d, want %d", coverSize, len(coverData))
 	}
-	readData, _ := io.ReadAll(coverReader)
+	readData, err := io.ReadAll(coverReader)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
 	if string(readData) != string(coverData) {
 		t.Errorf("cover data mismatch")
 	}
 }
 
 func TestUploadAudio_NoMetadata_StillSucceeds(t *testing.T) {
+	t.Parallel()
 	h := newTestHandler(t, nil)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	fw, _ := writer.CreateFormFile("file", "noise.bin")
-	fw.Write([]byte("not an audio file"))
-	writer.Close()
+	fw, err := writer.CreateFormFile("file", "noise.bin")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := fw.Write([]byte("not an audio file")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=audio&song_id=test-no-meta", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=test-no-meta", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
@@ -262,16 +312,24 @@ func TestUploadAudio_NoMetadata_StillSucceeds(t *testing.T) {
 }
 
 func TestUploadCover_DoesNotCallUpdater(t *testing.T) {
+	t.Parallel()
 	updater := &mockSongUpdater{}
 	h := newTestHandler(t, updater)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	fw, _ := writer.CreateFormFile("file", "cover.jpg")
-	fw.Write([]byte("fake jpeg bytes"))
-	writer.Close()
+	fw, err := writer.CreateFormFile("file", "cover.jpg")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := fw.Write([]byte("fake jpeg bytes")); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
-	req := httptest.NewRequest("POST", "/api/v1/files/upload?type=cover&song_id=test-cover", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=cover&song_id=test-cover", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
