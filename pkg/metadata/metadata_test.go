@@ -122,9 +122,9 @@ func buildMinimalFLAC(comments map[string]string) []byte {
 	vorbisBlockLen := len(vorbisPayload)
 	vorbisHdr := make([]byte, 4)
 	vorbisHdr[0] = 0x80 | 0x04
-	vorbisHdr[1] = byte(vorbisBlockLen >> 16)
-	vorbisHdr[2] = byte(vorbisBlockLen >> 8)
-	vorbisHdr[3] = byte(vorbisBlockLen)
+	vorbisHdr[1] = byte(vorbisBlockLen >> 16) //nolint:gosec // test data, always small
+	vorbisHdr[2] = byte(vorbisBlockLen >> 8)  //nolint:gosec // test data, always small
+	vorbisHdr[3] = byte(vorbisBlockLen)       //nolint:gosec // test data, always small
 
 	streamInfo := make([]byte, 34)
 	binary.BigEndian.PutUint16(streamInfo[0:2], 4096)
@@ -134,8 +134,8 @@ func buildMinimalFLAC(comments map[string]string) []byte {
 	ch := uint32(1)
 	bps := uint32(15)
 
-	streamInfo[18] = byte(sr >> 12)
-	streamInfo[19] = byte(sr >> 4)
+	streamInfo[18] = byte(sr >> 12) //nolint:gosec // test data, always small
+	streamInfo[19] = byte(sr >> 4)  //nolint:gosec // test data, always small
 	streamInfo[20] = byte((sr&0x0F)<<4) | byte(ch<<1) | byte(bps>>4)
 	streamInfo[21] = byte(bps << 4)
 
@@ -157,7 +157,8 @@ func buildMinimalFLAC(comments map[string]string) []byte {
 func writeTestFile(t *testing.T, data []byte, ext string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "test"+ext)
-	if err := os.WriteFile(path, data, 0o600); err != nil {
+	err := os.WriteFile(path, data, 0o600)
+	if err != nil {
 		t.Fatalf("write test file: %v", err)
 	}
 	return path
