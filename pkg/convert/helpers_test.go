@@ -7,6 +7,13 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+const (
+	testLocal                 = "local"
+	testUploaded              = "uploaded"
+	testFileSourceUnspecified = "FILE_SOURCE_UNSPECIFIED"
+	testLocalOnly             = "local_only"
+	testFileStatusUnspecified = "FILE_STATUS_UNSPECIFIED"
+)
 
 func TestPTime_FromZero(t *testing.T) {
 	t.Parallel()
@@ -42,11 +49,11 @@ func TestFileSourceToProto(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"local", "FILE_SOURCE_LOCAL"},
-		{"uploaded", "FILE_SOURCE_UPLOADED"},
+		{testLocal, "FILE_SOURCE_LOCAL"},
+		{testUploaded, "FILE_SOURCE_UPLOADED"},
 		{"synced", "FILE_SOURCE_SYNCED"},
-		{"unknown", "FILE_SOURCE_UNSPECIFIED"},
-		{"", "FILE_SOURCE_UNSPECIFIED"},
+		{"unknown", testFileSourceUnspecified},
+		{"", testFileSourceUnspecified},
 	}
 	for _, tt := range tests {
 		got := convert.FileSourceToProto(tt.input)
@@ -62,12 +69,12 @@ func TestFileSourceToEnt(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"FILE_SOURCE_LOCAL", "local"},
-		{"FILE_SOURCE_UPLOADED", "uploaded"},
+		{"FILE_SOURCE_LOCAL", testLocal},
+		{"FILE_SOURCE_UPLOADED", testUploaded},
 		{"FILE_SOURCE_SYNCED", "synced"},
-		{"FILE_SOURCE_UNSPECIFIED", "local"},
-		{"SOMETHING_ELSE", "local"},
-		{"", "local"},
+		{"FILE_SOURCE_UNSPECIFIED", testLocal},
+		{"SOMETHING_ELSE", testLocal},
+		{"", testLocal},
 	}
 	for _, tt := range tests {
 		got := convert.FileSourceToEnt(tt.input)
@@ -83,12 +90,12 @@ func TestFileStatusToProto(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"local_only", "FILE_STATUS_LOCAL_ONLY"},
-		{"uploaded", "FILE_STATUS_UPLOADED"},
+		{testLocalOnly, "FILE_STATUS_LOCAL_ONLY"},
+		{testUploaded, "FILE_STATUS_UPLOADED"},
 		{"downloaded", "FILE_STATUS_DOWNLOADED"},
 		{"cloud_only", "FILE_STATUS_CLOUD_ONLY"},
-		{"unknown", "FILE_STATUS_UNSPECIFIED"},
-		{"", "FILE_STATUS_UNSPECIFIED"},
+		{"unknown", testFileStatusUnspecified},
+		{"", testFileStatusUnspecified},
 	}
 	for _, tt := range tests {
 		got := convert.FileStatusToProto(tt.input)
@@ -104,12 +111,12 @@ func TestFileStatusToEnt(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"FILE_STATUS_LOCAL_ONLY", "local_only"},
-		{"FILE_STATUS_UPLOADED", "uploaded"},
+		{"FILE_STATUS_LOCAL_ONLY", testLocalOnly},
+		{"FILE_STATUS_UPLOADED", testUploaded},
 		{"FILE_STATUS_DOWNLOADED", "downloaded"},
 		{"FILE_STATUS_CLOUD_ONLY", "cloud_only"},
-		{"FILE_STATUS_UNSPECIFIED", "local_only"},
-		{"", "local_only"},
+		{"FILE_STATUS_UNSPECIFIED", testLocalOnly},
+		{"", testLocalOnly},
 	}
 	for _, tt := range tests {
 		got := convert.FileStatusToEnt(tt.input)
