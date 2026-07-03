@@ -1,3 +1,4 @@
+// Package playlist provides playlist management operations.
 package playlist
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+// EntToProto converts an ent Playlist to a proto Playlist.
 func EntToProto(p *ent.Playlist) *playlistpb.Playlist {
 	if p == nil {
 		return nil
