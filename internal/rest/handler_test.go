@@ -48,14 +48,14 @@ func buildTestMP3(t *testing.T, dir, title, artist string, coverData []byte) str
 	tBytes := append([]byte{0x03}, []byte(title)...)
 	frames = append(frames, "TIT2"...)
 	fSize := len(tBytes)
-	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
+	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize))) //nolint:gosec // test data, always small
 	frames = append(frames, 0, 0)
 	frames = append(frames, tBytes...)
 
 	aBytes := append([]byte{0x03}, []byte(artist)...)
 	frames = append(frames, "TPE1"...)
 	fSize = len(aBytes)
-	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
+	frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize))) //nolint:gosec // test data, always small
 	frames = append(frames, 0, 0)
 	frames = append(frames, aBytes...)
 
@@ -68,7 +68,7 @@ func buildTestMP3(t *testing.T, dir, title, artist string, coverData []byte) str
 		apicBody = append(apicBody, coverData...)
 		frames = append(frames, "APIC"...)
 		fSize = len(apicBody)
-		frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize)))
+		frames = append(frames, byte(uint32(fSize)>>24), byte(uint32(fSize)>>16), byte(uint32(fSize)>>8), byte(uint32(fSize))) //nolint:gosec // test data, always small
 		frames = append(frames, 0, 0)
 		frames = append(frames, apicBody...)
 	}
@@ -82,7 +82,8 @@ func buildTestMP3(t *testing.T, dir, title, artist string, coverData []byte) str
 	id3 = append(id3, frames...)
 
 	path := filepath.Join(dir, "test.mp3")
-	if err := os.WriteFile(path, id3, 0o600); err != nil {
+	err := os.WriteFile(path, id3, 0o600)
+	if err != nil {
 		t.Fatalf("write mp3: %v", err)
 	}
 	return path
@@ -94,15 +95,17 @@ func TestUploadAudio_Basic(t *testing.T) {
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	part, err := w.CreateFormFile("file", "test.mp3")
-	if err != nil {
-		t.Fatalf("CreateFormFile: %v", err)
+	part, wErr := w.CreateFormFile("file", "test.mp3")
+	if wErr != nil {
+		t.Fatalf("CreateFormFile: %v", wErr)
 	}
-	if _, err := part.Write([]byte("fake audio content")); err != nil {
-		t.Fatalf("Write: %v", err)
+	_, writeErr := part.Write([]byte("fake audio content"))
+	if writeErr != nil {
+		t.Fatalf("Write: %v", writeErr)
 	}
-	if err := w.Close(); err != nil {
-		t.Fatalf("Close: %v", err)
+	closeErr := w.Close()
+	if closeErr != nil {
+		t.Fatalf("Close: %v", closeErr)
 	}
 
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=s1", &buf)
@@ -132,7 +135,8 @@ func TestDownloadAudio(t *testing.T) {
 	t.Parallel()
 	h := newTestHandler(t, nil)
 	ctx := context.Background()
-	if err := h.Storage.SaveAudio(ctx, "s1", "track.mp3", strings.NewReader("audio data")); err != nil {
+	err := h.Storage.SaveAudio(ctx, "s1", "track.mp3", strings.NewReader("audio data"))
+	if err != nil {
 		t.Fatalf("SaveAudio: %v", err)
 	}
 
@@ -158,10 +162,12 @@ func TestUploadCover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateFormFile: %v", err)
 	}
-	if _, err := part.Write([]byte("cover bytes")); err != nil {
+	_, err = part.Write([]byte("cover bytes"))
+	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
-	if err := w.Close(); err != nil {
+	err = w.Close()
+	if err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 
@@ -201,15 +207,17 @@ func TestUploadAudio_CallsUpdater(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateFormFile: %v", err)
 	}
-	mp3Data, err := os.ReadFile(mp3Path)
+	mp3Data, err := os.ReadFile(mp3Path) //nolint:gosec // test file path from t.TempDir
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
 	}
-	if _, err := fw.Write(mp3Data); err != nil {
-		t.Fatalf("Write: %v", err)
+	_, writeErr := fw.Write(mp3Data)
+	if writeErr != nil {
+		t.Fatalf("Write: %v", writeErr)
 	}
-	if err := writer.Close(); err != nil {
-		t.Fatalf("Close: %v", err)
+	closeErr := writer.Close()
+	if closeErr != nil {
+		t.Fatalf("Close: %v", closeErr)
 	}
 
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=test-song-001", body)
@@ -246,15 +254,17 @@ func TestUploadAudio_WithCover_SavesCover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateFormFile: %v", err)
 	}
-	mp3Data, err := os.ReadFile(mp3Path)
+	mp3Data, err := os.ReadFile(mp3Path) //nolint:gosec // test file path from t.TempDir
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
 	}
-	if _, err := fw.Write(mp3Data); err != nil {
-		t.Fatalf("Write: %v", err)
+	_, writeErr := fw.Write(mp3Data)
+	if writeErr != nil {
+		t.Fatalf("Write: %v", writeErr)
 	}
-	if err := writer.Close(); err != nil {
-		t.Fatalf("Close: %v", err)
+	closeErr := writer.Close()
+	if closeErr != nil {
+		t.Fatalf("Close: %v", closeErr)
 	}
 
 	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=test-cover-song", body)
@@ -294,10 +304,12 @@ func TestUploadAudio_NoMetadata_StillSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateFormFile: %v", err)
 	}
-	if _, err := fw.Write([]byte("not an audio file")); err != nil {
+	_, err = fw.Write([]byte("not an audio file"))
+	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
-	if err := writer.Close(); err != nil {
+	err = writer.Close()
+	if err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 
@@ -322,10 +334,12 @@ func TestUploadCover_DoesNotCallUpdater(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateFormFile: %v", err)
 	}
-	if _, err := fw.Write([]byte("fake jpeg bytes")); err != nil {
+	_, err = fw.Write([]byte("fake jpeg bytes"))
+	if err != nil {
 		t.Fatalf("Write: %v", err)
 	}
-	if err := writer.Close(); err != nil {
+	err = writer.Close()
+	if err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 
