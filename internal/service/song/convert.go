@@ -1,3 +1,4 @@
+// Package song provides song management operations.
 package song
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+// EntToProto converts an ent Song to a proto Song.
 func EntToProto(s *ent.Song) *songpb.Song {
 	if s == nil {
 		return nil
@@ -34,6 +36,7 @@ func EntToProto(s *ent.Song) *songpb.Song {
 	}
 }
 
+// EntsToProtoList converts a slice of ent Songs to proto Songs.
 func EntsToProtoList(songs []*ent.Song) []*songpb.Song {
 	result := make([]*songpb.Song, len(songs))
 	for i, s := range songs {

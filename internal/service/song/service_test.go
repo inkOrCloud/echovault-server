@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
@@ -15,67 +17,52 @@ import (
 
 func newTestClient(t *testing.T) *ent.Client {
 	t.Helper()
-	drv, err := entsql.Open("sqlite3", "file:song?mode=memory&cache=shared&_fk=1")
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
+	name := "file:song_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
+	drv, err := entsql.Open("sqlite3", name)
+	require.NoError(t, err)
 	client := enttest.NewClient(t, enttest.WithOptions(ent.Driver(drv)))
-	if err := client.Schema.Create(context.Background()); err != nil {
-		t.Fatalf("create schema: %v", err)
-	}
+	require.NoError(t, client.Schema.Create(context.Background()))
 	return client
 }
 
 func TestCheckSongsByHash_Empty(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
 	results, err := svc.CheckSongsByHash(ctx, []string{"hash-nonexistent"})
-	if err != nil {
-		t.Fatalf("CheckSongsByHash() error = %v", err)
-	}
-	if len(results) != 1 {
-		t.Fatalf("results = %d, want 1", len(results))
-	}
-	if results[0].Exists {
-		t.Error("result.Exists = true for unknown hash, want false")
-	}
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.False(t, results[0].Exists)
 }
 
 func TestCheckSongsByHash_Found(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	pubResp, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+	pubResp, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title: "Test Song", Artist: "Test Artist",
 		FileHash: "abc123", FileName: "test.mp3",
 	})
+	require.NoError(t, err)
 
 	results, err := svc.CheckSongsByHash(ctx, []string{"abc123", "def456"})
-	if err != nil {
-		t.Fatalf("CheckSongsByHash() error = %v", err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("results = %d, want 2", len(results))
-	}
-	if !results[0].Exists {
-		t.Error("results[0].Exists = false for 'abc123', want true")
-	}
-	if results[0].Song.Id != pubResp.Id {
-		t.Errorf("results[0].Song.Id = %q, want %q", results[0].Song.Id, pubResp.Id)
-	}
-	if results[1].Exists {
-		t.Error("results[1].Exists = true for unknown hash, want false")
-	}
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	require.True(t, results[0].Exists)
+	require.Equal(t, pubResp.GetId(), results[0].Song.GetId())
+	require.False(t, results[1].Exists)
 }
 
 func TestPublishSong_Success(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
@@ -83,141 +70,112 @@ func TestPublishSong_Success(t *testing.T) {
 		Title: "My Song", Artist: "Me", Album: "Album 1",
 		FileHash: "def789", FileName: "track.flac",
 	})
-	if err != nil {
-		t.Fatalf("PublishSong() error = %v", err)
-	}
-	if resp.Id == "" {
-		t.Error("PublishSong() returned empty Id")
-	}
-	if resp.Title != "My Song" {
-		t.Errorf("Title = %q, want %q", resp.Title, "My Song")
-	}
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.GetId())
+	require.Equal(t, "My Song", resp.GetTitle())
 }
 
 func TestGetSong(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	pub, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+	pub, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title: "Get Me", FileHash: "get123",
 	})
-	got, err := svc.GetSong(ctx, pub.Id)
-	if err != nil {
-		t.Fatalf("GetSong() error = %v", err)
-	}
-	if got.Title != "Get Me" {
-		t.Errorf("Title = %q, want %q", got.Title, "Get Me")
-	}
+	require.NoError(t, err)
+	got, err := svc.GetSong(ctx, pub.GetId())
+	require.NoError(t, err)
+	require.Equal(t, "Get Me", got.GetTitle())
 }
 
 func TestSearchSongs(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Summer Nights", FileHash: "h1"})
-	svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Winter Sun", FileHash: "h2"})
-	svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Spring Rain", FileHash: "h3"})
+	_, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Summer Nights", FileHash: "h1"})
+	require.NoError(t, err)
+	_, err = svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Winter Sun", FileHash: "h2"})
+	require.NoError(t, err)
+	_, err = svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "Spring Rain", FileHash: "h3"})
+	require.NoError(t, err)
 
 	results, err := svc.SearchSongs(ctx, "summer", 10)
-	if err != nil {
-		t.Fatalf("SearchSongs() error = %v", err)
-	}
-	if len(results) != 1 {
-		t.Errorf("SearchSongs('summer') = %d, want 1", len(results))
-	}
+	require.NoError(t, err)
+	require.Len(t, results, 1)
 }
 
 func TestListSongs(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	for i := 0; i < 5; i++ {
-		svc.PublishSong(ctx, &songpb.PublishSongRequest{
+	for range 5 {
+		_, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{
 			Title: "Song", FileHash: "h",
 		})
+		require.NoError(t, err)
 	}
 
 	songs, err := svc.ListSongs(ctx, 3, 0)
-	if err != nil {
-		t.Fatalf("ListSongs() error = %v", err)
-	}
-	if len(songs) > 3 {
-		t.Errorf("ListSongs(limit=3) = %d, want <=3", len(songs))
-	}
+	require.NoError(t, err)
+	require.LessOrEqual(t, len(songs), 3)
 }
 
 func TestUpdateFromScan_FillsEmptyFields(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	// 用户手动发布，Title 已填，Artist 和 Album 留空
-	pubResp, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+	pubResp, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title: "User Title", Artist: "", Album: "",
 		FileHash: "old-hash", FileName: "user.mp3",
 	})
+	require.NoError(t, err)
 
-	// 上传后从 tag 提取的元数据
-	err := svc.UpdateFromScan(ctx, pubResp.Id, "Tag Title", "Tag Artist", "Tag Album",
+	err = svc.UpdateFromScan(ctx, pubResp.GetId(), "Tag Title", "Tag Artist", "Tag Album",
 		"Tag Genre", 3, 1, 2024, "new-hash-abc", "song.mp3", "audio/mpeg", 12345)
-	if err != nil {
-		t.Fatalf("UpdateFromScan() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	// 验证
-	updated, _ := svc.GetSong(ctx, pubResp.Id)
-	if updated.Title != "User Title" {
-		t.Errorf("Title = %q, want %q (should NOT be overwritten)", updated.Title, "User Title")
-	}
-	if updated.Artist != "Tag Artist" {
-		t.Errorf("Artist = %q, want %q (should be filled)", updated.Artist, "Tag Artist")
-	}
-	if updated.Album != "Tag Album" {
-		t.Errorf("Album = %q, want %q (should be filled)", updated.Album, "Tag Album")
-	}
-	if updated.FileHash != "new-hash-abc" {
-		t.Errorf("FileHash = %q, want %q", updated.FileHash, "new-hash-abc")
-	}
-	if updated.FileSize != 12345 {
-		t.Errorf("FileSize = %d, want 12345", updated.FileSize)
-	}
+	updated, err := svc.GetSong(ctx, pubResp.GetId())
+	require.NoError(t, err)
+	require.Equal(t, "User Title", updated.GetTitle())
+	require.Equal(t, "Tag Artist", updated.GetArtist())
+	require.Equal(t, "Tag Album", updated.GetAlbum())
+	require.Equal(t, "new-hash-abc", updated.GetFileHash())
+	require.Equal(t, int64(12345), updated.GetFileSize())
 }
 
 func TestUpdateFromScan_AllFieldsAlreadySet(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	svc := song.NewService(client)
 	ctx := context.Background()
 
-	// 用户手动填写了所有字段
-	pubResp, _ := svc.PublishSong(ctx, &songpb.PublishSongRequest{
+	pubResp, err := svc.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title: "My Title", Artist: "My Artist", Album: "My Album",
 		Genre: "Rock", FileHash: "hash1", FileName: "track.mp3",
 	})
+	require.NoError(t, err)
 
-	// tag 信息应该不覆盖任何已有字段
-	err := svc.UpdateFromScan(ctx, pubResp.Id,
+	err = svc.UpdateFromScan(ctx, pubResp.GetId(),
 		"Tag Title", "Tag Artist", "Tag Album", "Tag Genre",
 		3, 1, 2024, "new-hash", "track.mp3", "audio/mpeg", 9999)
-	if err != nil {
-		t.Fatalf("UpdateFromScan() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	updated, _ := svc.GetSong(ctx, pubResp.Id)
-	if updated.Title != "My Title" {
-		t.Errorf("Title = %q, want 'My Title'", updated.Title)
-	}
-	if updated.Artist != "My Artist" {
-		t.Errorf("Artist = %q, want 'My Artist'", updated.Artist)
-	}
-	if updated.FileHash != "new-hash" {
-		t.Errorf("FileHash = %q, want 'new-hash' (always update)", updated.FileHash)
-	}
+	updated, err := svc.GetSong(ctx, pubResp.GetId())
+	require.NoError(t, err)
+	require.Equal(t, "My Title", updated.GetTitle())
+	require.Equal(t, "My Artist", updated.GetArtist())
+	require.Equal(t, "new-hash", updated.GetFileHash())
 }
