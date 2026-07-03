@@ -6,13 +6,12 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/require"
-
+	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
-	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/require"
 )
 
 func newTestClient(t *testing.T) *ent.Client {
@@ -28,7 +27,7 @@ func newTestClient(t *testing.T) *ent.Client {
 func TestNextVersion_StartsAt1(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	vt := sync.NewVersionTracker(client)
 	ctx := context.Background()
 
@@ -40,7 +39,7 @@ func TestNextVersion_StartsAt1(t *testing.T) {
 func TestNextVersion_AfterWrite(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	vt := sync.NewVersionTracker(client)
 	logger := sync.NewChangeLogger(client)
 	ctx := context.Background()
@@ -62,7 +61,7 @@ func TestNextVersion_AfterWrite(t *testing.T) {
 func TestCurrentVersion_Empty(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	vt := sync.NewVersionTracker(client)
 	ctx := context.Background()
 
@@ -74,7 +73,7 @@ func TestCurrentVersion_Empty(t *testing.T) {
 func TestCurrentVersion_AfterWrites(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t)
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 	vt := sync.NewVersionTracker(client)
 	logger := sync.NewChangeLogger(client)
 	ctx := context.Background()
