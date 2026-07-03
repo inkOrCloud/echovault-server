@@ -199,7 +199,7 @@ func applyMetadataIfEmpty(u *ent.SongUpdateOne, r *ent.Song,
 		u.SetFileSize(fileSize)
 		updated = true
 	}
-	if r.FileHash == "" && fileHash != "" {
+	if fileHash != "" {
 		u.SetFileHash(fileHash)
 		updated = true
 	}

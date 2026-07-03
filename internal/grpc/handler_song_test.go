@@ -19,7 +19,8 @@ import (
 
 func newSongTestServer(t *testing.T) (songpb.SongServiceClient, func()) {
 	t.Helper()
-	drv, err := entsql.Open("sqlite3", "file:song_handler?mode=memory&cache=shared&_fk=1")
+	name := "file:song_handler_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
+	drv, err := entsql.Open("sqlite3", name)
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}

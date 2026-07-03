@@ -177,7 +177,7 @@ func TestParseFile_MP3_BasicTags(t *testing.T) {
 		"TALB": "Test Album",
 		"TRCK": "1",
 		"TPOS": "2",
-		"TDRC": "2024",
+		"TYER": "2024",
 		"TCON": "Rock",
 	})
 	path := writeTestFile(t, data, ".mp3")

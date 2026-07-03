@@ -114,7 +114,8 @@ func (s *Service) AddSong(ctx context.Context, playlistID, songID, addedBy strin
 		Aggregate(ent.Max(playlistsong.FieldPosition)).
 		Int(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("query max position: %w", err)
+		// Ignore "converting NULL to int" error - means playlist is empty
+		maxPos = 0
 	}
 
 	pos := maxPos + positionStep
