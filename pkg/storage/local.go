@@ -24,10 +24,12 @@ type LocalStorage struct {
 
 // NewLocalStorage creates a new LocalStorage.
 func NewLocalStorage(basePath string) (*LocalStorage, error) {
-	if err := os.MkdirAll(filepath.Join(basePath, songsSubdir), dirPermission); err != nil {
+	err := os.MkdirAll(filepath.Join(basePath, songsSubdir), dirPermission)
+	if err != nil {
 		return nil, fmt.Errorf("create songs dir: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Join(basePath, coversSubdir), dirPermission); err != nil {
+	err = os.MkdirAll(filepath.Join(basePath, coversSubdir), dirPermission)
+	if err != nil {
 		return nil, fmt.Errorf("create covers dir: %w", err)
 	}
 	return &LocalStorage{basePath: basePath}, nil
@@ -36,7 +38,8 @@ func NewLocalStorage(basePath string) (*LocalStorage, error) {
 // SaveAudio stores an audio file.
 func (s *LocalStorage) SaveAudio(_ context.Context, songID, filename string, reader io.Reader) error {
 	dir := filepath.Join(s.basePath, songsSubdir, songID)
-	if err := os.MkdirAll(dir, dirPermission); err != nil {
+	err := os.MkdirAll(dir, dirPermission)
+	if err != nil {
 		return fmt.Errorf("create song dir: %w", err)
 	}
 	dst, err := os.Create(filepath.Join(dir, filename)) //nolint:gosec // songID and filename are validated
@@ -44,7 +47,8 @@ func (s *LocalStorage) SaveAudio(_ context.Context, songID, filename string, rea
 		return fmt.Errorf("create audio file: %w", err)
 	}
 	defer func() { _ = dst.Close() }()
-	if _, err := io.Copy(dst, reader); err != nil {
+	_, err = io.Copy(dst, reader)
+	if err != nil {
 		return fmt.Errorf("copy audio data: %w", err)
 	}
 	return nil
@@ -79,7 +83,8 @@ func (s *LocalStorage) SaveCover(_ context.Context, songID string, reader io.Rea
 		return fmt.Errorf("create cover file: %w", err)
 	}
 	defer func() { _ = dst.Close() }()
-	if _, err := io.Copy(dst, reader); err != nil {
+	_, err = io.Copy(dst, reader)
+	if err != nil {
 		return fmt.Errorf("copy cover data: %w", err)
 	}
 	return nil
@@ -104,10 +109,12 @@ func (s *LocalStorage) GetCover(_ context.Context, songID string) (io.ReadCloser
 
 // DeleteSongFiles removes all files for a song.
 func (s *LocalStorage) DeleteSongFiles(_ context.Context, songID string) error {
-	if err := os.RemoveAll(filepath.Join(s.basePath, songsSubdir, songID)); err != nil {
+	err := os.RemoveAll(filepath.Join(s.basePath, songsSubdir, songID))
+	if err != nil {
 		return fmt.Errorf("remove song files: %w", err)
 	}
-	if err := os.Remove(filepath.Join(s.basePath, coversSubdir, songID+".jpg")); err != nil && !os.IsNotExist(err) {
+	err = os.Remove(filepath.Join(s.basePath, coversSubdir, songID+".jpg"))
+	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("remove cover file: %w", err)
 	}
 	return nil
