@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/playlist"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/playlistsong"
@@ -78,10 +77,12 @@ func (s *Service) UpdatePlaylist(ctx context.Context, id, name, description stri
 
 // DeletePlaylist deletes a playlist and its songs.
 func (s *Service) DeletePlaylist(ctx context.Context, id string) error {
-	if _, err := s.client.PlaylistSong.Delete().Where(playlistsong.PlaylistID(id)).Exec(ctx); err != nil {
+	_, err := s.client.PlaylistSong.Delete().Where(playlistsong.PlaylistID(id)).Exec(ctx)
+	if err != nil {
 		return fmt.Errorf("delete playlist songs: %w", err)
 	}
-	if err := s.client.Playlist.DeleteOneID(id).Exec(ctx); err != nil {
+	err = s.client.Playlist.DeleteOneID(id).Exec(ctx)
+	if err != nil {
 		return fmt.Errorf("delete playlist: %w", err)
 	}
 	return nil
