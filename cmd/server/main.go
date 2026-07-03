@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -26,22 +28,71 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// songUpdaterAdapter 桥接 REST handler 的 SongUpdater 到 SongService。
+const (
+	defaultGRPCPort     = 9090
+	defaultRESTPort     = 9091
+	shutdownTimeoutSecs = 5
+)
+
+// Sentinel errors for overflow checks.
+var (
+	ErrTrackNumberOverflow = errors.New("track number overflows int32")
+	ErrDiscNumberOverflow  = errors.New("disc number overflows int32")
+	ErrYearOverflow        = errors.New("year overflows int32")
+)
+
+// songUpdaterAdapter bridges the REST handler's SongUpdater to SongService.
 type songUpdaterAdapter struct {
 	svc *song.Service
 }
 
 func (a *songUpdaterAdapter) UpdateFromScan(songID string, meta *metadata.AudioMetadata, fileSize int64) error {
-	err := a.svc.UpdateFromScan(context.Background(), songID,
+	if meta.TrackNumber > math.MaxInt32 || meta.TrackNumber < math.MinInt32 {
+		return ErrTrackNumberOverflow
+	}
+	if meta.DiscNumber > math.MaxInt32 || meta.DiscNumber < math.MinInt32 {
+		return ErrDiscNumberOverflow
+	}
+	if meta.Year > math.MaxInt32 || meta.Year < math.MinInt32 {
+		return ErrYearOverflow
+	}
+	return a.svc.UpdateFromScan(context.Background(), songID,
 		meta.Title, meta.Artist, meta.Album, meta.Genre,
 		int32(meta.TrackNumber), int32(meta.DiscNumber), int32(meta.Year),
 		meta.FileHash, meta.FileName, meta.MIMEType, fileSize)
-	return err
+}
+
+func setupGRPC(client *ent.Client, jwtSecret string) (*grpc.Server, net.Listener) {
+	lc := net.ListenConfig{}
+	lis, err := lc.Listen(context.Background(), "tcp", fmt.Sprintf(":%d", viper.GetInt("grpc_port")))
+	if err != nil {
+		log.Fatalf("failed to listen gRPC: %v", err)
+	}
+	s := grpc.NewServer(grpc.UnaryInterceptor(evgrpc.AuthInterceptor(jwtSecret)))
+	evgrpc.RegisterAll(s, client, jwtSecret)
+	return s, lis
+}
+
+func setupREST(songSvc *song.Service) *http.Server {
+	storageSvc, err := storage.NewStorage(
+		viper.GetString("storage_type"),
+		viper.GetString("storage_path"),
+	)
+	if err != nil {
+		log.Fatalf("failed to init storage: %v", err)
+	}
+	songUpdater := &songUpdaterAdapter{svc: songSvc}
+	restHandler := rest.NewHandler(storageSvc, songUpdater)
+	return &http.Server{
+		Addr:              fmt.Sprintf(":%d", viper.GetInt("rest_port")),
+		Handler:           restHandler,
+		ReadHeaderTimeout: 10 * time.Second, //nolint:mnd
+	}
 }
 
 func main() {
-	viper.SetDefault("grpc_port", 9090)
-	viper.SetDefault("rest_port", 9091)
+	viper.SetDefault("grpc_port", defaultGRPCPort)
+	viper.SetDefault("rest_port", defaultRESTPort)
 	viper.SetDefault("db_path", "data/echovault.db")
 	viper.SetDefault("jwt_secret", "change-me-in-production")
 	viper.SetDefault("storage_type", "local")
@@ -53,7 +104,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
-	defer drv.Close()
+	defer func() { _ = drv.Close() }()
 
 	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()
@@ -65,37 +116,13 @@ func main() {
 	slog.Info("database migrated successfully")
 
 	jwtSecret := viper.GetString("jwt_secret")
+	s, lis := setupGRPC(client, jwtSecret)
 
-	// 启动 gRPC 服务
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", viper.GetInt("grpc_port")))
-	if err != nil {
-		log.Fatalf("failed to listen gRPC: %v", err)
-	}
-
-	s := grpc.NewServer(grpc.UnaryInterceptor(evgrpc.AuthInterceptor(jwtSecret)))
-	evgrpc.RegisterAll(s, client, jwtSecret)
-
-	// 启动 REST 文件服务 (Gin)
-	storageSvc, err := storage.NewStorage(
-		viper.GetString("storage_type"),
-		viper.GetString("storage_path"),
-	)
-	if err != nil {
-		log.Fatalf("failed to init storage: %v", err)
-	}
-
-	// 创建 SongUpdater adapter
 	songSvc := song.NewService(client)
-	songUpdater := &songUpdaterAdapter{svc: songSvc}
+	ginServer := setupREST(songSvc)
 
-	restHandler := rest.NewHandler(storageSvc, songUpdater)
-	ginServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", viper.GetInt("rest_port")),
-		Handler: restHandler,
-	}
-
-	// 优雅关闭
-	ctx, cancel := context.WithCancel(context.Background())
+	// Graceful shutdown
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sigCh := make(chan os.Signal, 1)
@@ -106,14 +133,14 @@ func main() {
 		cancel()
 		s.GracefulStop()
 
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSecs*time.Second)
 		defer shutdownCancel()
-		ginServer.Shutdown(shutdownCtx)
+		_ = ginServer.Shutdown(shutdownCtx)
 	}()
 
 	go func() {
 		slog.Info("starting REST file server", "port", viper.GetInt("rest_port"))
-		if err := ginServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := ginServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("REST server error: %v", err)
 		}
 	}()
