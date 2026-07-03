@@ -27,7 +27,7 @@ func (h *PlaylistHandler) CreatePlaylist(ctx context.Context, req *playlistpb.Cr
 	userID := GetUserID(ctx)
 	p, err := h.svc.CreatePlaylist(ctx, req.GetName(), req.GetDescription(), userID)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &playlistpb.CreatePlaylistResponse{Playlist: playlistEntToProto(p)}, nil
 }
@@ -36,7 +36,7 @@ func (h *PlaylistHandler) CreatePlaylist(ctx context.Context, req *playlistpb.Cr
 func (h *PlaylistHandler) GetPlaylist(ctx context.Context, req *playlistpb.GetPlaylistRequest) (*playlistpb.GetPlaylistResponse, error) {
 	p, err := h.svc.GetPlaylist(ctx, req.GetId())
 	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &playlistpb.GetPlaylistResponse{Playlist: playlistEntToProto(p)}, nil
 }
@@ -46,7 +46,7 @@ func (h *PlaylistHandler) ListPlaylists(ctx context.Context, _ *playlistpb.ListP
 	userID := GetUserID(ctx)
 	playlists, err := h.svc.ListPlaylists(ctx, userID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	pb := make([]*playlistpb.Playlist, len(playlists))
 	for i, p := range playlists {
@@ -60,7 +60,7 @@ func (h *PlaylistHandler) AddSong(ctx context.Context, req *playlistpb.AddSongRe
 	userID := GetUserID(ctx)
 	ps, err := h.svc.AddSong(ctx, req.GetPlaylistId(), req.GetSongId(), userID)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &playlistpb.AddSongResponse{PlaylistSong: &playlistpb.PlaylistSong{
 		PlaylistId: ps.PlaylistID, SongId: ps.SongID, Position: ps.Position,
@@ -69,8 +69,9 @@ func (h *PlaylistHandler) AddSong(ctx context.Context, req *playlistpb.AddSongRe
 
 // RemoveSong removes a song from a playlist.
 func (h *PlaylistHandler) RemoveSong(ctx context.Context, req *playlistpb.RemoveSongRequest) (*playlistpb.RemoveSongResponse, error) {
-	if err := h.svc.RemoveSong(ctx, req.GetPlaylistId(), req.GetSongId()); err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
+	err := h.svc.RemoveSong(ctx, req.GetPlaylistId(), req.GetSongId())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
 	}
 	return &playlistpb.RemoveSongResponse{}, nil
 }
