@@ -1,3 +1,4 @@
+// Package main is the entry point for the EchoVault server.
 package main
 
 import (
@@ -15,17 +16,15 @@ import (
 	"time"
 
 	entsql "entgo.io/ent/dialect/sql"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	evgrpc "github.com/inkOrCloud/EchoVault/echovault-server/internal/grpc"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/rest"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/song"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/metadata"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/storage"
-
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -56,10 +55,14 @@ func (a *songUpdaterAdapter) UpdateFromScan(songID string, meta *metadata.AudioM
 	if meta.Year > math.MaxInt32 || meta.Year < math.MinInt32 {
 		return ErrYearOverflow
 	}
-	return a.svc.UpdateFromScan(context.Background(), songID,
+	err := a.svc.UpdateFromScan(context.Background(), songID,
 		meta.Title, meta.Artist, meta.Album, meta.Genre,
 		int32(meta.TrackNumber), int32(meta.DiscNumber), int32(meta.Year),
 		meta.FileHash, meta.FileName, meta.MIMEType, fileSize)
+	if err != nil {
+		return fmt.Errorf("update from scan: %w", err)
+	}
+	return nil
 }
 
 func setupGRPC(client *ent.Client, jwtSecret string) (*grpc.Server, net.Listener) {
@@ -104,15 +107,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
-	defer func() { _ = drv.Close() }()
 
 	client := ent.NewClient(ent.Driver(drv))
-	defer client.Close()
 
 	ctx := context.Background()
-	if err := client.Schema.Create(ctx); err != nil {
+	err = client.Schema.Create(ctx)
+	if err != nil {
+		_ = drv.Close()
+		_ = client.Close()
 		log.Fatalf("failed to create schema: %v", err)
 	}
+	defer func() { _ = drv.Close() }()
+	defer func() { _ = client.Close() }()
 	slog.Info("database migrated successfully")
 
 	jwtSecret := viper.GetString("jwt_secret")
@@ -140,13 +146,17 @@ func main() {
 
 	go func() {
 		slog.Info("starting REST file server", "port", viper.GetInt("rest_port"))
-		if err := ginServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		err := ginServer.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("REST server error: %v", err)
 		}
 	}()
 
 	slog.Info("starting EchoVault server", "port", viper.GetInt("grpc_port"))
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("gRPC server error: %v", err)
+	err = s.Serve(lis)
+	if err != nil {
+		cancel()
+		slog.Error("gRPC server error", "error", err)
+		os.Exit(1) //nolint:gocritic // cancel() is called explicitly above
 	}
 }
