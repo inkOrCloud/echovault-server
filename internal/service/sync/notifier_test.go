@@ -9,6 +9,7 @@ import (
 )
 
 func TestSubscribeAndNotify(t *testing.T) {
+	t.Parallel()
 	n := syncsvc.NewNotifier()
 	ch := n.Subscribe("dev-001")
 	defer n.Unsubscribe("dev-001")
@@ -23,8 +24,8 @@ func TestSubscribeAndNotify(t *testing.T) {
 
 	select {
 	case notif := <-ch:
-		if notif.EntityType != "song" {
-			t.Errorf("EntityType = %q, want %q", notif.EntityType, "song")
+		if notif.GetEntityType() != "song" {
+			t.Errorf("EntityType = %q, want %q", notif.GetEntityType(), "song")
 		}
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for notification")
@@ -32,6 +33,7 @@ func TestSubscribeAndNotify(t *testing.T) {
 }
 
 func TestSubscribe_MultipleDevices(t *testing.T) {
+	t.Parallel()
 	n := syncsvc.NewNotifier()
 	ch1 := n.Subscribe("dev-001")
 	ch2 := n.Subscribe("dev-002")
@@ -45,6 +47,7 @@ func TestSubscribe_MultipleDevices(t *testing.T) {
 }
 
 func TestUnsubscribe_StopsReceiving(t *testing.T) {
+	t.Parallel()
 	n := syncsvc.NewNotifier()
 	ch := n.Subscribe("dev-001")
 	n.Unsubscribe("dev-001")

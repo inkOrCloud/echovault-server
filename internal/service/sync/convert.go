@@ -6,6 +6,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/convert"
 )
 
+// EntToProto converts an ent.SyncLog to a proto SyncChange.
 func EntToProto(s *ent.SyncLog) *syncpb.SyncChange {
 	if s == nil {
 		return nil
@@ -21,6 +22,7 @@ func EntToProto(s *ent.SyncLog) *syncpb.SyncChange {
 	}
 }
 
+// actionToProto converts a string action to proto enum.
 func actionToProto(s string) syncpb.SyncChange_Action {
 	switch s {
 	case "create":
@@ -34,6 +36,7 @@ func actionToProto(s string) syncpb.SyncChange_Action {
 	}
 }
 
+// ProtoActionToEnt converts a proto action enum to string.
 func ProtoActionToEnt(pb syncpb.SyncChange_Action) string {
 	switch pb {
 	case syncpb.SyncChange_ACTION_CREATE:
