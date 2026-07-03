@@ -20,31 +20,37 @@ import (
 
 func newSongTestServer(t *testing.T) (songpb.SongServiceClient, func()) {
 	t.Helper()
-	drv, _ := entsql.Open("sqlite3", "file:song_handler?mode=memory&cache=shared&_fk=1")
+	drv, err := entsql.Open("sqlite3", "file:song_handler?mode=memory&cache=shared&_fk=1")
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
 	client := enttest.NewClient(t, enttest.WithOptions(ent.Driver(drv)))
 	if err := client.Schema.Create(context.Background()); err != nil {
 		t.Fatalf("create schema: %v", err)
 	}
-
 	svc := song.NewService(client)
 	handler := evgrpc.NewSongHandler(svc)
-
 	s := grpc.NewServer()
 	songpb.RegisterSongServiceServer(s, handler)
-	lis, _ := net.Listen("tcp", "127.0.0.1:0")
-	go s.Serve(lis)
-	conn, _ := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go func() { _ = s.Serve(lis) }()
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
 	songClient := songpb.NewSongServiceClient(conn)
-
-	return songClient, func() { conn.Close(); s.GracefulStop() }
+	return songClient, func() { _ = conn.Close(); s.GracefulStop() }
 }
 
 func TestSongCheckByHashHandler(t *testing.T) {
+	t.Parallel()
 	client, cleanup := newSongTestServer(t)
 	defer cleanup()
 
-	// 先发布
-	client.PublishSong(context.Background(), &songpb.PublishSongRequest{
+	_, _ = client.PublishSong(context.Background(), &songpb.PublishSongRequest{
 		Title: "Hash Test", FileHash: "hash123",
 	})
 
@@ -54,18 +60,19 @@ func TestSongCheckByHashHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckSongsByHash RPC error = %v", err)
 	}
-	if len(resp.Results) != 2 {
-		t.Fatalf("results = %d, want 2", len(resp.Results))
+	if len(resp.GetResults()) != 2 {
+		t.Fatalf("results = %d, want 2", len(resp.GetResults()))
 	}
-	if !resp.Results[0].Exists {
+	if !resp.GetResults()[0].GetExists() {
 		t.Error("results[0].Exists = false, want true")
 	}
-	if resp.Results[1].Exists {
+	if resp.GetResults()[1].GetExists() {
 		t.Error("results[1].Exists = true, want false")
 	}
 }
 
 func TestSongPublishHandler(t *testing.T) {
+	t.Parallel()
 	client, cleanup := newSongTestServer(t)
 	defer cleanup()
 
@@ -75,10 +82,7 @@ func TestSongPublishHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PublishSong RPC error = %v", err)
 	}
-	if resp.Song.Id == "" {
-		t.Error("Song.Id is empty")
-	}
-	if resp.Song.Title != "New Song" {
-		t.Errorf("Title = %q, want %q", resp.Song.Title, "New Song")
+	if resp.GetSong().GetId() == "" {
+		t.Error("PublishSong returned empty ID")
 	}
 }

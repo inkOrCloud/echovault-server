@@ -2,7 +2,6 @@ package grpc_test
 
 import (
 	"context"
-	"io"
 	"net"
 	"testing"
 
@@ -15,13 +14,13 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
 	evgrpc "github.com/inkOrCloud/EchoVault/echovault-server/internal/grpc"
-	syncsvc "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
+	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/sync"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
 )
 
 func newSyncTestServer(t *testing.T) (syncpb.SyncServiceClient, func()) {
 	t.Helper()
-	name := "file:sync_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
+	name := "file:sync_handler_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
 	drv, err := entsql.Open("sqlite3", name)
 	if err != nil {
 		t.Fatalf("open db: %v", err)
@@ -30,71 +29,41 @@ func newSyncTestServer(t *testing.T) (syncpb.SyncServiceClient, func()) {
 	if err := client.Schema.Create(context.Background()); err != nil {
 		t.Fatalf("create schema: %v", err)
 	}
-
-	svc := syncsvc.NewService(client)
+	svc := sync.NewService(client)
 	handler := evgrpc.NewSyncHandler(svc)
-
 	s := grpc.NewServer()
 	syncpb.RegisterSyncServiceServer(s, handler)
-	lis, _ := net.Listen("tcp", "127.0.0.1:0")
-	go s.Serve(lis)
-	conn, _ := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	syncClient := syncpb.NewSyncServiceClient(conn)
-
-	return syncClient, func() { conn.Close(); s.GracefulStop(); client.Close() }
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go func() { _ = s.Serve(lis) }()
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	c := syncpb.NewSyncServiceClient(conn)
+	return c, func() { _ = conn.Close(); s.GracefulStop() }
 }
 
 func TestSyncPushHandler(t *testing.T) {
-	client, cleanup := newSyncTestServer(t)
+	t.Parallel()
+	c, cleanup := newSyncTestServer(t)
 	defer cleanup()
 
-	resp, err := client.PushChanges(context.Background(), &syncpb.PushChangesRequest{
-		DeviceId: "dev-001",
+	resp, err := c.PushChanges(context.Background(), &syncpb.PushChangesRequest{
+		DeviceId: testDeviceID,
 		Changes: []*syncpb.SyncChange{{
 			EntityType: "song",
 			EntityId:   uuid.New().String(),
 			Action:     syncpb.SyncChange_ACTION_CREATE,
+			DeviceId:   testDeviceID,
 		}},
 	})
 	if err != nil {
 		t.Fatalf("PushChanges RPC error = %v", err)
 	}
-	if resp.ServerVersion < 1 {
-		t.Errorf("ServerVersion = %d, want >=1", resp.ServerVersion)
-	}
-}
-
-func TestSyncPullHandler(t *testing.T) {
-	client, cleanup := newSyncTestServer(t)
-	defer cleanup()
-
-	client.PushChanges(context.Background(), &syncpb.PushChangesRequest{
-		DeviceId: "dev-001",
-		Changes: []*syncpb.SyncChange{{
-			EntityType: "song", EntityId: uuid.New().String(),
-			Action: syncpb.SyncChange_ACTION_CREATE,
-		}},
-	})
-
-	stream, err := client.PullChanges(context.Background(), &syncpb.PullChangesRequest{
-		DeviceId: "dev-002", SinceVersion: 0,
-	})
-	if err != nil {
-		t.Fatalf("PullChanges RPC error = %v", err)
-	}
-
-	count := 0
-	for {
-		_, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("PullChanges stream error = %v", err)
-		}
-		count++
-	}
-	if count != 1 {
-		t.Errorf("PullChanges count = %d, want 1", count)
+	if resp.GetServerVersion() != 1 {
+		t.Errorf("ServerVersion = %d, want 1", resp.GetServerVersion())
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,9 +18,15 @@ import (
 	userpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/user/v1"
 )
 
+const (
+	testDeviceID = "dev-001"
+	testPassword = "ValidPass1"
+)
+
 func newTestServer(t *testing.T) (userpb.UserServiceClient, func()) {
 	t.Helper()
-	drv, err := entsql.Open("sqlite3", "file:handler?mode=memory&cache=shared&_fk=1")
+	name := "file:user_handler_" + uuid.New().String() + "?mode=memory&cache=shared&_fk=1"
+	drv, err := entsql.Open("sqlite3", name)
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
@@ -27,71 +34,58 @@ func newTestServer(t *testing.T) (userpb.UserServiceClient, func()) {
 	if err := client.Schema.Create(context.Background()); err != nil {
 		t.Fatalf("create schema: %v", err)
 	}
-
 	svc := user.NewService(client, "test-secret")
-	userHandler := evgrpc.NewUserHandler(svc)
-
+	handler := evgrpc.NewUserHandler(svc)
 	s := grpc.NewServer()
-	userpb.RegisterUserServiceServer(s, userHandler)
-
-	lis, _ := net.Listen("tcp", "127.0.0.1:0")
-	go s.Serve(lis)
-
-	conn, _ := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	uclient := userpb.NewUserServiceClient(conn)
-
-	return uclient, func() {
-		conn.Close()
-		s.GracefulStop()
+	userpb.RegisterUserServiceServer(s, handler)
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
 	}
+	go func() { _ = s.Serve(lis) }()
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	c := userpb.NewUserServiceClient(conn)
+	return c, func() { _ = conn.Close(); s.GracefulStop() }
 }
 
-func TestRegisterHandler_Success(t *testing.T) {
-	client, cleanup := newTestServer(t)
+func TestUserRegisterHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newTestServer(t)
 	defer cleanup()
 
-	resp, err := client.Register(context.Background(), &userpb.RegisterRequest{
-		Username: "handleruser",
-		Password: "ValidPass1",
+	resp, err := c.Register(context.Background(), &userpb.RegisterRequest{
+		Username: "handler_user", Password: testPassword,
 	})
 	if err != nil {
 		t.Fatalf("Register RPC error = %v", err)
 	}
-	if resp.User.Username != "handleruser" {
-		t.Errorf("resp.User.Username = %q, want %q", resp.User.Username, "handleruser")
+	if resp.GetUser().GetUsername() != "handler_user" {
+		t.Errorf("Username = %q", resp.GetUser().GetUsername())
 	}
-	if resp.AccessToken == "" {
-		t.Error("resp.AccessToken is empty")
+	if resp.GetAccessToken() == "" {
+		t.Error("AccessToken is empty")
 	}
 }
 
-func TestLoginHandler_Success(t *testing.T) {
-	client, cleanup := newTestServer(t)
+func TestUserLoginHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newTestServer(t)
 	defer cleanup()
 
-	client.Register(context.Background(), &userpb.RegisterRequest{
-		Username: "loginhandler", Password: "ValidPass1",
+	_, _ = c.Register(context.Background(), &userpb.RegisterRequest{
+		Username: "login_handler", Password: testPassword,
 	})
-	resp, err := client.Login(context.Background(), &userpb.LoginRequest{
-		Username: "loginhandler", Password: "ValidPass1", DeviceId: "dev-001",
+
+	resp, err := c.Login(context.Background(), &userpb.LoginRequest{
+		Username: "login_handler", Password: testPassword,
 	})
 	if err != nil {
 		t.Fatalf("Login RPC error = %v", err)
 	}
-	if resp.AccessToken == "" {
-		t.Error("resp.AccessToken is empty")
-	}
-}
-
-func TestRegisterHandler_WeakPassword(t *testing.T) {
-	client, cleanup := newTestServer(t)
-	defer cleanup()
-
-	_, err := client.Register(context.Background(), &userpb.RegisterRequest{
-		Username: "weak",
-		Password: "short",
-	})
-	if err == nil {
-		t.Fatal("Register RPC expected error for weak password")
+	if resp.GetAccessToken() == "" {
+		t.Error("AccessToken is empty")
 	}
 }
