@@ -28,13 +28,16 @@ import (
 )
 
 const (
-	defaultGRPCPort     = 9090
-	defaultRESTPort     = 9091
-	shutdownTimeoutSecs = 5
-	// SQLite connection pool settings
-	dbMaxOpenConns    = 25
-	dbMaxIdleConns    = 5
-	dbConnMaxLifetime = 5 * time.Minute
+	defaultGRPCPort       = 9090
+	defaultRESTPort       = 9091
+	shutdownTimeoutSecs   = 5
+	dbMaxOpenConns        = 25
+	dbMaxIdleConns        = 5
+	dbConnMaxLifetime     = 5 * time.Minute
+	maxRecvMsgSize        = 50 * 1024 * 1024 // 50 MB
+	readHeaderTimeoutSecs = 10
+	readTimeoutSecs       = 30
+	writeTimeoutSecs      = 60
 )
 
 // Sentinel errors for overflow checks.
@@ -70,13 +73,11 @@ func (a *songUpdaterAdapter) UpdateFromScan(songID string, meta *metadata.AudioM
 }
 
 func setupDB(dbPath string) (*ent.Client, error) {
-	// Open SQLite with WAL mode, foreign keys, and connection pooling
 	drv, err := entsql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_fk=1&_cache_size=-20000&_busy_timeout=5000")
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
-	// Configure connection pool for SQLite to handle concurrent queries
 	drv.DB().SetMaxOpenConns(dbMaxOpenConns)
 	drv.DB().SetMaxIdleConns(dbMaxIdleConns)
 	drv.DB().SetConnMaxLifetime(dbConnMaxLifetime)
@@ -92,10 +93,9 @@ func setupGRPC(client *ent.Client, jwtSecret string) (*grpc.Server, net.Listener
 		log.Fatalf("failed to listen gRPC: %v", err)
 	}
 
-	// Create gRPC server with auth interceptor and optional optimizations
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(evgrpc.AuthInterceptor(jwtSecret)),
-		grpc.MaxRecvMsgSize(50*1024*1024), // 50MB max message size for file uploads
+		grpc.MaxRecvMsgSize(maxRecvMsgSize),
 	)
 	evgrpc.RegisterAll(s, client, jwtSecret)
 	return s, lis
@@ -114,9 +114,9 @@ func setupREST(songSvc *song.Service) *http.Server {
 	return &http.Server{
 		Addr:              fmt.Sprintf(":%d", viper.GetInt("rest_port")),
 		Handler:           restHandler,
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second, // Allow longer for large file uploads
+		ReadHeaderTimeout: readHeaderTimeoutSecs * time.Second,
+		ReadTimeout:       readTimeoutSecs * time.Second,
+		WriteTimeout:      writeTimeoutSecs * time.Second,
 	}
 }
 
@@ -138,11 +138,9 @@ func main() {
 	}
 	defer func() { _ = client.Close() }()
 
-	// Create schema (migration)
-	ctx := context.Background()
-	err = client.Schema.Create(ctx)
+	err = client.Schema.Create(context.Background())
 	if err != nil {
-		log.Fatalf("failed to create schema: %v", err)
+		log.Fatalf("failed to create schema: %v", err) //nolint:gocritic
 	}
 	slog.Info("database migrated successfully")
 
@@ -153,15 +151,12 @@ func main() {
 	ginServer := setupREST(songSvc)
 
 	// Graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-sigCh
 		slog.Info("shutting down servers...")
-		cancel()
 		s.GracefulStop()
 
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeoutSecs*time.Second)
@@ -178,7 +173,6 @@ func main() {
 		}
 	}()
 
-	// Log startup time
 	elapsed := time.Since(startTime)
 	slog.Info("EchoVault server started",
 		"grpc_port", viper.GetInt("grpc_port"),
@@ -188,7 +182,6 @@ func main() {
 
 	err = s.Serve(lis)
 	if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-		cancel()
 		slog.Error("gRPC server error", "error", err)
 		os.Exit(1)
 	}

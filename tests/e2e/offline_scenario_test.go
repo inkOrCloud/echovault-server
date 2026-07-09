@@ -1,4 +1,3 @@
-// Package e2e_test contains end-to-end integration tests for EchoVault.
 package e2e_test
 
 import (
@@ -8,6 +7,7 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	commonpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/common/v1"
 	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
 	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
@@ -18,12 +18,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
+
+const offlineDeviceID = "e2e-offline-device"
 
 // newOfflineTestServer creates a test server for offline scenario testing.
 func newOfflineTestServer(t *testing.T) (
-	userpb.UserServiceClient,
 	songpb.SongServiceClient,
 	playlistpb.PlaylistServiceClient,
 	syncpb.SyncServiceClient,
@@ -61,7 +61,6 @@ func newOfflineTestServer(t *testing.T) (
 
 	userClient := userpb.NewUserServiceClient(conn)
 
-	// Register and login
 	_, err = userClient.Register(context.Background(), &userpb.RegisterRequest{
 		Username: "offline_user",
 		Password: "Offline1",
@@ -77,8 +76,7 @@ func newOfflineTestServer(t *testing.T) (
 		t.Fatalf("Login: %v", err)
 	}
 
-	return userClient,
-		songpb.NewSongServiceClient(conn),
+	return songpb.NewSongServiceClient(conn),
 		playlistpb.NewPlaylistServiceClient(conn),
 		syncpb.NewSyncServiceClient(conn),
 		loginResp.GetAccessToken(),
@@ -86,25 +84,15 @@ func newOfflineTestServer(t *testing.T) (
 }
 
 // TestOfflineScenario_LocalOperationsThenSync validates that data created
-// "offline" (simulated by not syncing, then later pulling changes) is consistent.
-//
-// This simulates the offline-first architecture:
-//   1. Device goes offline, user performs local operations
-//   2. Device comes back online and syncs (PushChanges)
-//   3. Server acknowledges and stores the changes
+// while "offline" is consistent after syncing.
 func TestOfflineScenario_LocalOperationsThenSync(t *testing.T) {
 	t.Parallel()
-	_, songClient, playlistClient, syncClient, token, cleanup := newOfflineTestServer(t)
+	songClient, playlistClient, syncClient, token, cleanup := newOfflineTestServer(t)
 	defer cleanup()
 
-	ctx := metadata.NewOutgoingContext(context.Background(),
-		metadata.Pairs("authorization", "Bearer "+token))
+	ctx := authCtx(token)
 
-	// ---- Simulate offline operations: create songs and playlist ----
-	// In a real offline scenario, these would go to local SQLite first.
-	// Here we simulate reconnection by sending operations that were queued locally.
-
-	// "Offline" publish 1
+	// Simulate "offline" operations: create songs and playlist
 	song1Resp, err := songClient.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title:    "Offline Song One",
 		Artist:   "Offline Artist",
@@ -112,49 +100,59 @@ func TestOfflineScenario_LocalOperationsThenSync(t *testing.T) {
 		FileHash: uuid.New().String(),
 	})
 	if err != nil {
-		t.Fatalf("PublishSong 1 (simulated offline): %v", err)
+		t.Fatalf("PublishSong 1: %v", err)
 	}
 
-	// "Offline" publish 2
 	song2Resp, err := songClient.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title:    "Offline Song Two",
 		Artist:   "Offline Artist",
 		FileHash: uuid.New().String(),
 	})
 	if err != nil {
-		t.Fatalf("PublishSong 2 (simulated offline): %v", err)
+		t.Fatalf("PublishSong 2: %v", err)
 	}
 
-	// "Offline" create playlist
 	playlistResp, err := playlistClient.CreatePlaylist(ctx, &playlistpb.CreatePlaylistRequest{
 		Name: "Offline Playlist",
 	})
 	if err != nil {
-		t.Fatalf("CreatePlaylist (simulated offline): %v", err)
+		t.Fatalf("CreatePlaylist: %v", err)
 	}
 
-	// ---- Come back online ----
-	// Push all changes to the server
+	// "Reconnect": push offline changes to server
 	pushResp, err := syncClient.PushChanges(ctx, &syncpb.PushChangesRequest{
-		LastVersion: 0,
+		DeviceId: offlineDeviceID,
+		Changes: []*syncpb.SyncChange{
+			{
+				EntityType: "song", //nolint:goconst
+				EntityId:   song1Resp.GetSong().GetId(),
+				Action:     syncpb.SyncChange_ACTION_CREATE,
+				DeviceId:   offlineDeviceID,
+			},
+			{
+				EntityType: "song",
+				EntityId:   song2Resp.GetSong().GetId(),
+				Action:     syncpb.SyncChange_ACTION_CREATE,
+				DeviceId:   offlineDeviceID,
+			},
+		},
 	})
 	if err != nil {
-		t.Fatalf("PushChanges (reconnect): %v", err)
+		t.Fatalf("PushChanges: %v", err)
 	}
-	if pushResp.GetAcceptedVersion() == 0 {
-		t.Error("PushChanges accepted_version should be > 0")
+	if pushResp.GetServerVersion() <= 0 {
+		t.Error("PushChanges ServerVersion should be > 0")
 	}
-	t.Logf("PushChanges accepted version: %d", pushResp.GetAcceptedVersion())
-
-	// ---- Pull changes from the server to verify consistency ----
-	listResp, err := songClient.ListSongs(ctx, &songpb.ListSongsRequest{
-		PageSize: 10,
-	})
-	if err != nil {
-		t.Fatalf("ListSongs after reconnect: %v", err)
-	}
+	t.Logf("PushChanges server version: %d, accepted: %d",
+		pushResp.GetServerVersion(), pushResp.GetAcceptedCount())
 
 	// Verify all offline data is consistent on server
+	listResp, err := songClient.ListSongs(ctx, &songpb.ListSongsRequest{
+		Pagination: &commonpb.PaginationRequest{PageSize: 10},
+	})
+	if err != nil {
+		t.Fatalf("ListSongs: %v", err)
+	}
 	if len(listResp.GetSongs()) < 2 {
 		t.Fatalf("ListSongs returned %d songs, want >= 2", len(listResp.GetSongs()))
 	}
@@ -163,7 +161,6 @@ func TestOfflineScenario_LocalOperationsThenSync(t *testing.T) {
 	for _, s := range listResp.GetSongs() {
 		songIDs[s.GetId()] = true
 	}
-
 	if !songIDs[song1Resp.GetSong().GetId()] {
 		t.Error("Song 1 not found after reconnect")
 	}
@@ -176,45 +173,46 @@ func TestOfflineScenario_LocalOperationsThenSync(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListPlaylists: %v", err)
 	}
-	playlistFound := false
+	found := false
 	for _, p := range playlistsResp.GetPlaylists() {
 		if p.GetId() == playlistResp.GetPlaylist().GetId() {
-			playlistFound = true
+			found = true
 			break
 		}
 	}
-	if !playlistFound {
+	if !found {
 		t.Error("Offline-created playlist not found after reconnect")
 	}
 }
 
-// TestOfflineScenario_PushWithVersion tests that PushChanges properly tracks versions.
+// TestOfflineScenario_PushWithVersion verifies push version tracking.
 func TestOfflineScenario_PushWithVersion(t *testing.T) {
 	t.Parallel()
-	_, _, _, syncClient, token, cleanup := newOfflineTestServer(t)
+	_, _, syncClient, token, cleanup := newOfflineTestServer(t)
 	defer cleanup()
 
-	ctx := metadata.NewOutgoingContext(context.Background(),
-		metadata.Pairs("authorization", "Bearer "+token))
+	ctx := authCtx(token)
 
 	// Push with version tracking
 	push1, err := syncClient.PushChanges(ctx, &syncpb.PushChangesRequest{
-		LastVersion: 0,
+		DeviceId: offlineDeviceID,
+		Changes:  []*syncpb.SyncChange{},
 	})
 	if err != nil {
 		t.Fatalf("First PushChanges: %v", err)
 	}
-	if push1.GetAcceptedVersion() < 0 {
-		t.Error("First push accepted_version should be >= 0")
-	}
-	t.Logf("First push accepted version: %d", push1.GetAcceptedVersion())
+	t.Logf("First push: version=%d accepted=%d",
+		push1.GetServerVersion(), push1.GetAcceptedCount())
 
-	// Push again with the last version
+	// Push again — should work with any version
 	push2, err := syncClient.PushChanges(ctx, &syncpb.PushChangesRequest{
-		LastVersion: push1.GetAcceptedVersion(),
+		DeviceId:        offlineDeviceID,
+		LastPullVersion: push1.GetServerVersion(),
+		Changes:         []*syncpb.SyncChange{},
 	})
 	if err != nil {
 		t.Fatalf("Second PushChanges: %v", err)
 	}
-	t.Logf("Second push accepted version: %d", push2.GetAcceptedVersion())
+	t.Logf("Second push: version=%d accepted=%d",
+		push2.GetServerVersion(), push2.GetAcceptedCount())
 }

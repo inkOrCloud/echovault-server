@@ -1,4 +1,3 @@
-// Package e2e_test contains end-to-end integration tests for EchoVault.
 package e2e_test
 
 import (
@@ -8,6 +7,7 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	commonpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/common/v1"
 	lyricpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/lyric/v1"
 	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
 	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
@@ -97,7 +97,7 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 	// Step 1: Register
 	_, err := userClient.Register(context.Background(), &userpb.RegisterRequest{
 		Username:    "e2e_user",
-		Password:    "SecurePass1",
+		Password:    "SecurePass1", //nolint:goconst
 		DisplayName: "E2E Tester",
 	})
 	if err != nil {
@@ -122,7 +122,7 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 
 	song1Resp, err := songClient.PublishSong(ctx, &songpb.PublishSongRequest{
 		Title:    "Test Song One",
-		Artist:   "Test Artist",
+		Artist:   "Test Artist", //nolint:goconst
 		Album:    "Test Album",
 		Genre:    "Rock",
 		FileHash: uuid.New().String(),
@@ -167,7 +167,7 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 
 	// Step 5: List songs
 	listResp, err := songClient.ListSongs(ctx, &songpb.ListSongsRequest{
-		PageSize: 10,
+		Pagination: &commonpb.PaginationRequest{PageSize: 10},
 	})
 	if err != nil {
 		t.Fatalf("ListSongs failed: %v", err)
@@ -178,7 +178,8 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 
 	// Step 6: Search songs
 	searchResp, err := songClient.SearchSongs(ctx, &songpb.SearchSongsRequest{
-		Query: "Test Song One",
+		Query:      "Test Song One",
+		Pagination: &commonpb.PaginationRequest{PageSize: 10},
 	})
 	if err != nil {
 		t.Fatalf("SearchSongs failed: %v", err)
@@ -201,18 +202,18 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 	}
 
 	// Step 8: Add songs to playlist
-	_, err = playlistClient.AddSongToPlaylist(ctx, &playlistpb.AddSongToPlaylistRequest{
+	_, err = playlistClient.AddSong(ctx, &playlistpb.AddSongRequest{
 		PlaylistId: playlistID,
 		SongId:     song1ID,
 	})
 	if err != nil {
-		t.Fatalf("AddSongToPlaylist 1 failed: %v", err)
+		t.Fatalf("AddSong to playlist failed: %v", err)
 	}
 
 	// Step 9: Save lyric
 	_, err = lyricClient.SaveLyric(ctx, &lyricpb.SaveLyricRequest{
 		SongId: song1ID,
-		Type:   lyricpb.LyricType_LYRIC_TYPE_ORIGINAL,
+		Type:   lyricpb.Lyric_TYPE_ORIGINAL,
 		Content: `[00:01.00]This is a test lyric
 [00:05.00]For e2e testing
 [00:10.00]End of test`,
@@ -224,29 +225,33 @@ func TestFullFlow_RegisterLoginPublishPlaylistLyric(t *testing.T) {
 	// Step 10: Get lyric
 	lyricResp, err := lyricClient.GetLyric(ctx, &lyricpb.GetLyricRequest{
 		SongId: song1ID,
-		Type:   lyricpb.LyricType_LYRIC_TYPE_ORIGINAL,
+		Type:   lyricpb.Lyric_TYPE_ORIGINAL,
 	})
 	if err != nil {
 		t.Fatalf("GetLyric failed: %v", err)
 	}
-	if lyricResp.GetLyric().GetContent() == "" {
+	if len(lyricResp.GetLyrics()) == 0 {
+		t.Fatal("No lyrics returned")
+	}
+	if lyricResp.GetLyrics()[0].GetContent() == "" {
 		t.Error("Lyric content is empty")
 	}
 
 	// Step 11: Reorder playlist songs
-	_, err = playlistClient.ReorderPlaylistSongs(ctx, &playlistpb.ReorderPlaylistSongsRequest{
+	_, err = playlistClient.ReorderSongs(ctx, &playlistpb.ReorderSongsRequest{
 		PlaylistId: playlistID,
 		SongIds:    []string{song1ID},
 	})
 	if err != nil {
-		t.Fatalf("ReorderPlaylistSongs failed: %v", err)
+		t.Fatalf("ReorderSongs failed: %v", err)
 	}
 }
 
 // TestFullFlow_DuplicateRegistration tests that registering an existing user fails.
 func TestFullFlow_DuplicateRegistration(t *testing.T) {
 	t.Parallel()
-	userClient, _, _, _, cleanup := newFullServer(t)
+	//nolint:dogsled
+	userClient, _, _, _, cleanup := newFullServer(t) //nolint:dogsled
 	defer cleanup()
 
 	_, err := userClient.Register(context.Background(), &userpb.RegisterRequest{
@@ -291,27 +296,28 @@ func TestFullFlow_RemoveSongFromPlaylist(t *testing.T) {
 		t.Fatalf("CreatePlaylist: %v", err)
 	}
 
-	_, err = playlistClient.AddSongToPlaylist(ctx, &playlistpb.AddSongToPlaylistRequest{
+	_, err = playlistClient.AddSong(ctx, &playlistpb.AddSongRequest{
 		PlaylistId: playlistResp.GetPlaylist().GetId(),
 		SongId:     songResp.GetSong().GetId(),
 	})
 	if err != nil {
-		t.Fatalf("AddSongToPlaylist: %v", err)
+		t.Fatalf("AddSong: %v", err)
 	}
 
-	_, err = playlistClient.RemoveSongFromPlaylist(ctx, &playlistpb.RemoveSongFromPlaylistRequest{
+	_, err = playlistClient.RemoveSong(ctx, &playlistpb.RemoveSongRequest{
 		PlaylistId: playlistResp.GetPlaylist().GetId(),
 		SongId:     songResp.GetSong().GetId(),
 	})
 	if err != nil {
-		t.Fatalf("RemoveSongFromPlaylist: %v", err)
+		t.Fatalf("RemoveSong: %v", err)
 	}
 }
 
 // TestFullFlow_UnauthenticatedAccess tests that protected RPCs reject unauthenticated calls.
 func TestFullFlow_UnauthenticatedAccess(t *testing.T) {
 	t.Parallel()
-	_, songClient, _, _, cleanup := newFullServer(t)
+	//nolint:dogsled
+	_, songClient, _, _, cleanup := newFullServer(t) //nolint:dogsled
 	defer cleanup()
 
 	_, err := songClient.PublishSong(context.Background(), &songpb.PublishSongRequest{

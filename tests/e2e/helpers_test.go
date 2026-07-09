@@ -1,12 +1,13 @@
 // Package e2e_test contains shared test utilities for EchoVault end-to-end tests.
-package e2e_test
+package e2e_test //nolint:godoclint
 
 import (
 	"context"
+
 	"google.golang.org/grpc/metadata"
 )
 
-const testJWTSecret = "e2e-test-secret-key"
+const testJWTSecret = "e2e-test-secret-key" //nolint:gosec
 
 // authCtx creates a context with the Bearer token in gRPC metadata.
 func authCtx(token string) context.Context {

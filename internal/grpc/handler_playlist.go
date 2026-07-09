@@ -82,7 +82,7 @@ func playlistEntToProto(p *ent.Playlist) *playlistpb.Playlist {
 	}
 	return &playlistpb.Playlist{
 		Id: p.ID, Name: p.Name, Description: p.Description,
-		OwnerId: p.OwnerID, SongCount: int32(p.SongCount),
+		OwnerId: p.OwnerID, SongCount: int32(p.SongCount), //nolint:gosec
 		Type: playlistpb.Playlist_TYPE_USER,
 	}
 }
