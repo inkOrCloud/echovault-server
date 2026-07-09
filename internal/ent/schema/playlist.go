@@ -35,6 +35,13 @@ func (Playlist) Fields() []ent.Field {
 // Indexes returns the Playlist indexes.
 func (Playlist) Indexes() []ent.Index {
 	return []ent.Index{
+		// Filter by owner
 		index.Fields("owner_id"),
+
+		// Composite: list playlists per owner sorted by name
+		index.Fields("owner_id", "name"),
+
+		// Public playlist discovery
+		index.Fields("is_public"),
 	}
 }

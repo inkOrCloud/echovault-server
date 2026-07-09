@@ -2,12 +2,15 @@
 package rest
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inkOrCloud/EchoVault/echovault-server/pkg/metadata"
@@ -15,6 +18,9 @@ import (
 )
 
 const errField = "error"
+
+// cache duration for cover images (7 days)
+const coverCacheMaxAge = 7 * 24 * time.Hour
 
 // Handler handles REST file requests.
 type Handler struct {
@@ -37,6 +43,11 @@ func NewHandler(s storage.Storage, songUpdater SongUpdater) *Handler {
 		api.GET("/download/cover/:songID", h.handleDownloadCover)
 		api.DELETE("/:type/:songID", h.handleDelete)
 	}
+
+	// Health check endpoint
+	router.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	h.router = router
 	return h
@@ -149,14 +160,120 @@ func (h *Handler) handleDownloadAudio(c *gin.Context) {
 	}
 	defer func() { _ = reader.Close() }()
 
-	c.Header("Content-Type", "audio/mpeg")
+	contentType := "audio/mpeg"
+	// Check if client sent a Range header (for seeking support)
+	rangeHeader := c.GetHeader("Range")
+	if rangeHeader != "" {
+		// Parse range header and serve partial content
+		h.serveRangeRequest(c, reader, size, rangeHeader, contentType)
+		return
+	}
+
+	c.Header("Content-Type", contentType)
 	c.Header("Content-Length", strconv.FormatInt(size, 10))
 	c.Header("Accept-Ranges", "bytes")
-	c.DataFromReader(http.StatusOK, size, "audio/mpeg", reader, nil)
+	c.Header("Cache-Control", "public, max-age=3600")
+	c.Status(http.StatusOK)
+	_, _ = io.Copy(c.Writer, reader)
+}
+
+func (h *Handler) serveRangeRequest(c *gin.Context, reader io.ReadCloser, totalSize int64, rangeHeader string, contentType string) {
+	// Parse "bytes=start-end"
+	rangeParts := strings.Split(rangeHeader, "=")
+	if len(rangeParts) != 2 || rangeParts[0] != "bytes" {
+		c.Header("Content-Range", fmt.Sprintf("bytes */%d", totalSize))
+		c.Status(http.StatusRequestedRangeNotSatisfiable)
+		return
+	}
+
+	rangeVal := strings.TrimSpace(rangeParts[1])
+	var start, end int64
+
+	if strings.HasPrefix(rangeVal, "-") {
+		// Suffix range: -500 (last 500 bytes)
+		suffix, err := strconv.ParseInt(strings.TrimPrefix(rangeVal, "-"), 10, 64)
+		if err != nil || suffix <= 0 {
+			c.Status(http.StatusRequestedRangeNotSatisfiable)
+			return
+		}
+		start = totalSize - suffix
+		if start < 0 {
+			start = 0
+		}
+		end = totalSize - 1
+	} else {
+		parts := strings.SplitN(rangeVal, "-", 2)
+		var err error
+		start, err = strconv.ParseInt(parts[0], 10, 64)
+		if err != nil || start < 0 || start >= totalSize {
+			c.Status(http.StatusRequestedRangeNotSatisfiable)
+			return
+		}
+		if len(parts) == 2 && parts[1] != "" {
+			end, err = strconv.ParseInt(parts[1], 10, 64)
+			if err != nil || end >= totalSize {
+				end = totalSize - 1
+			}
+		} else {
+			// Default: read to end
+			end = totalSize - 1
+		}
+	}
+
+	if start > end || start < 0 {
+		c.Status(http.StatusRequestedRangeNotSatisfiable)
+		return
+	}
+
+	contentLength := end - start + 1
+	c.Header("Content-Type", contentType)
+	c.Header("Content-Length", strconv.FormatInt(contentLength, 10))
+	c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, totalSize))
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Cache-Control", "public, max-age=3600")
+	c.Status(http.StatusPartialContent)
+
+	// Seek and copy the requested range
+	if seeker, ok := reader.(io.Seeker); ok {
+		_, _ = seeker.Seek(start, io.SeekStart)
+		_, _ = io.CopyN(c.Writer, reader, contentLength)
+	} else {
+		// Fallback: read and discard
+		buf := make([]byte, 32*1024)
+		written := int64(0)
+		for written < contentLength {
+			remaining := contentLength - written
+			readSize := int64(len(buf))
+			if remaining < readSize {
+				readSize = remaining
+			}
+			n, readErr := reader.Read(buf[:readSize])
+			if n > 0 {
+				_, writeErr := c.Writer.Write(buf[:n])
+				if writeErr != nil {
+					return
+				}
+				written += int64(n)
+			}
+			if readErr != nil {
+				return
+			}
+		}
+	}
 }
 
 func (h *Handler) handleDownloadCover(c *gin.Context) {
 	songID := c.Param("songID")
+
+	// Generate ETag based on songID for caching
+	etag := fmt.Sprintf("\"%x\"", sha256.Sum256([]byte("cover:"+songID)))
+
+	// Check If-None-Match (client cache validation)
+	if match := c.GetHeader("If-None-Match"); match == etag {
+		c.Status(http.StatusNotModified)
+		return
+	}
+
 	reader, size, err := h.Storage.GetCover(c.Request.Context(), songID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{errField: "cover not found"})
@@ -164,6 +281,11 @@ func (h *Handler) handleDownloadCover(c *gin.Context) {
 	}
 	defer func() { _ = reader.Close() }()
 
+	c.Header("Content-Type", "image/jpeg")
+	c.Header("Content-Length", strconv.FormatInt(size, 10))
+	c.Header("Cache-Control", "public, max-age="+strconv.Itoa(int(coverCacheMaxAge.Seconds())))
+	c.Header("ETag", etag)
+	c.Header("Expires", time.Now().Add(coverCacheMaxAge).Format(http.TimeFormat))
 	c.DataFromReader(http.StatusOK, size, "image/jpeg", reader, nil)
 }
 

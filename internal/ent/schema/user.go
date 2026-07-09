@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 const (
@@ -30,5 +31,9 @@ func (User) Fields() []ent.Field {
 
 // Indexes returns the User indexes.
 func (User) Indexes() []ent.Index {
-	return nil
+	return []ent.Index{
+		// Username is already indexed via Unique() constraint.
+		// Add index for admin queries listing users by creation time.
+		index.Fields("created_at"),
+	}
 }

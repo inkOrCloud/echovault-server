@@ -52,7 +52,19 @@ func (Song) Fields() []ent.Field {
 // Indexes returns the Song indexes.
 func (Song) Indexes() []ent.Index {
 	return []ent.Index{
+		// Lookup by file hash (for dedup check)
 		index.Fields("file_hash"),
+
+		// Filter by owner
 		index.Fields("owner_id"),
+
+		// Composite: list non-deleted songs per owner sorted by title
+		index.Fields("owner_id", "is_deleted", "title"),
+
+		// Search: filter non-deleted, sort by created_at
+		index.Fields("is_deleted", "created_at"),
+
+		// Version-based sync queries
+		index.Fields("version"),
 	}
 }

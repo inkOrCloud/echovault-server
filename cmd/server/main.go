@@ -31,6 +31,10 @@ const (
 	defaultGRPCPort     = 9090
 	defaultRESTPort     = 9091
 	shutdownTimeoutSecs = 5
+	// SQLite connection pool settings
+	dbMaxOpenConns    = 25
+	dbMaxIdleConns    = 5
+	dbConnMaxLifetime = 5 * time.Minute
 )
 
 // Sentinel errors for overflow checks.
@@ -65,13 +69,34 @@ func (a *songUpdaterAdapter) UpdateFromScan(songID string, meta *metadata.AudioM
 	return nil
 }
 
+func setupDB(dbPath string) (*ent.Client, error) {
+	// Open SQLite with WAL mode, foreign keys, and connection pooling
+	drv, err := entsql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_fk=1&_cache_size=-20000&_busy_timeout=5000")
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+
+	// Configure connection pool for SQLite to handle concurrent queries
+	drv.DB().SetMaxOpenConns(dbMaxOpenConns)
+	drv.DB().SetMaxIdleConns(dbMaxIdleConns)
+	drv.DB().SetConnMaxLifetime(dbConnMaxLifetime)
+
+	client := ent.NewClient(ent.Driver(drv))
+	return client, nil
+}
+
 func setupGRPC(client *ent.Client, jwtSecret string) (*grpc.Server, net.Listener) {
 	lc := net.ListenConfig{}
 	lis, err := lc.Listen(context.Background(), "tcp", fmt.Sprintf(":%d", viper.GetInt("grpc_port")))
 	if err != nil {
 		log.Fatalf("failed to listen gRPC: %v", err)
 	}
-	s := grpc.NewServer(grpc.UnaryInterceptor(evgrpc.AuthInterceptor(jwtSecret)))
+
+	// Create gRPC server with auth interceptor and optional optimizations
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(evgrpc.AuthInterceptor(jwtSecret)),
+		grpc.MaxRecvMsgSize(50*1024*1024), // 50MB max message size for file uploads
+	)
 	evgrpc.RegisterAll(s, client, jwtSecret)
 	return s, lis
 }
@@ -89,7 +114,9 @@ func setupREST(songSvc *song.Service) *http.Server {
 	return &http.Server{
 		Addr:              fmt.Sprintf(":%d", viper.GetInt("rest_port")),
 		Handler:           restHandler,
-		ReadHeaderTimeout: 10 * time.Second, //nolint:mnd
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second, // Allow longer for large file uploads
 	}
 }
 
@@ -102,23 +129,21 @@ func main() {
 	viper.SetDefault("storage_path", "data/files")
 	viper.AutomaticEnv()
 
+	startTime := time.Now()
+
 	dbPath := viper.GetString("db_path")
-	drv, err := entsql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_fk=1")
+	client, err := setupDB(dbPath)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
+	defer func() { _ = client.Close() }()
 
-	client := ent.NewClient(ent.Driver(drv))
-
+	// Create schema (migration)
 	ctx := context.Background()
 	err = client.Schema.Create(ctx)
 	if err != nil {
-		_ = drv.Close()
-		_ = client.Close()
 		log.Fatalf("failed to create schema: %v", err)
 	}
-	defer func() { _ = drv.Close() }()
-	defer func() { _ = client.Close() }()
 	slog.Info("database migrated successfully")
 
 	jwtSecret := viper.GetString("jwt_secret")
@@ -128,7 +153,7 @@ func main() {
 	ginServer := setupREST(songSvc)
 
 	// Graceful shutdown
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sigCh := make(chan os.Signal, 1)
@@ -144,6 +169,7 @@ func main() {
 		_ = ginServer.Shutdown(shutdownCtx)
 	}()
 
+	// Start REST server
 	go func() {
 		slog.Info("starting REST file server", "port", viper.GetInt("rest_port"))
 		err := ginServer.ListenAndServe()
@@ -152,11 +178,18 @@ func main() {
 		}
 	}()
 
-	slog.Info("starting EchoVault server", "port", viper.GetInt("grpc_port"))
+	// Log startup time
+	elapsed := time.Since(startTime)
+	slog.Info("EchoVault server started",
+		"grpc_port", viper.GetInt("grpc_port"),
+		"rest_port", viper.GetInt("rest_port"),
+		"startup_time_ms", elapsed.Milliseconds(),
+	)
+
 	err = s.Serve(lis)
-	if err != nil {
+	if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		cancel()
 		slog.Error("gRPC server error", "error", err)
-		os.Exit(1) //nolint:gocritic // cancel() is called explicitly above
+		os.Exit(1)
 	}
 }
