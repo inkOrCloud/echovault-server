@@ -1,9 +1,8 @@
 package user_test
 
 import (
+	"errors"
 	"context"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
@@ -11,6 +10,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/user"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func newTestClient(t *testing.T) *ent.Client {
@@ -188,4 +188,43 @@ func TestRemoveDevice(t *testing.T) {
 
 	devices, _ := svc.ListDevices(ctx, reg.UserID)
 	require.Empty(t, devices)
+}
+
+func TestValidatePassword_TooLong(t *testing.T) {
+	t.Parallel()
+	err := user.ValidatePassword("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1")
+	if !errors.Is(err, user.ErrPasswordTooLong) { t.Errorf("err=%v", err) }
+}
+func TestGetUser_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := user.NewService(client, "s")
+	_, err := svc.GetUser(context.Background(), "x")
+	if !errors.Is(err, user.ErrUserNotFound) { t.Errorf("err=%v", err) }
+}
+func TestRemoveDevice_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := user.NewService(client, "s")
+	err := svc.RemoveDevice(context.Background(), "u", "x")
+	if !errors.Is(err, user.ErrDeviceNotFound) { t.Errorf("err=%v", err) }
+}
+func TestUserEntToProto(t *testing.T) {
+	t.Parallel()
+	pb := user.EntToProto(&ent.User{ID:"u1",Username:"test",DisplayName:"Test User",Role:"user"})
+	if pb.GetId() != "u1" { t.Errorf("id=%q",pb.GetId()) }
+	if pb.GetUsername() != "test" { t.Errorf("user=%q",pb.GetUsername()) }
+}
+func TestUserEntToProto_Nil(t *testing.T) {
+	t.Parallel()
+	if pb := user.EntToProto(nil); pb != nil { t.Error("should be nil") }
+}
+func TestEntDeviceToProto(t *testing.T) {
+	t.Parallel(); 
+	d := &ent.Device{DeviceID:"d1",DeviceName:"Desktop",Platform:"linux"}
+	pb := user.EntDeviceToProto(d)
+	if pb.GetDeviceId() != "d1" { t.Errorf("id=%q",pb.GetDeviceId()) }
+	if pb.GetDeviceName() != "Desktop" { t.Errorf("name=%q",pb.GetDeviceName()) }
+}
+func TestEntDeviceToProto_Nil(t *testing.T) {
+	t.Parallel()
+	if pb := user.EntDeviceToProto(nil); pb != nil { t.Error("should be nil") }
 }
