@@ -2,16 +2,15 @@ package song_test
 
 import (
 	"context"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
-	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/song"
+	song "github.com/inkOrCloud/EchoVault/echovault-server/internal/service/song"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func newTestClient(t *testing.T) *ent.Client {
@@ -177,4 +176,57 @@ func TestUpdateFromScan_AllFieldsAlreadySet(t *testing.T) {
 	require.Equal(t, "My Title", updated.GetTitle())
 	require.Equal(t, "My Artist", updated.GetArtist())
 	require.Equal(t, "new-hash", updated.GetFileHash())
+}
+
+func TestGetSong_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := song.NewService(client)
+	_, err := svc.GetSong(t.Context(), "x")
+	require.Error(t, err)
+}
+func TestSearchSongs_NoResults(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := song.NewService(client)
+	r, _ := svc.SearchSongs(t.Context(), "xxx", 10)
+	require.Empty(t, r)
+}
+func TestListSongs_Empty(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := song.NewService(client)
+	s, _ := svc.ListSongs(t.Context(), 10, 0)
+	require.Empty(t, s)
+}
+func TestListSongs_Pagination(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := song.NewService(client); ctx := t.Context()
+	for i := 0; i < 5; i++ { svc.PublishSong(ctx, &songpb.PublishSongRequest{Title: "S", FileHash: "h"}) }
+	s1, _ := svc.ListSongs(ctx, 2, 0); require.Len(t, s1, 2)
+	s2, _ := svc.ListSongs(ctx, 2, 2); require.Len(t, s2, 2)
+	s3, _ := svc.ListSongs(ctx, 2, 4); require.Len(t, s3, 1)
+}
+func TestUpdateFromScan_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := song.NewService(client)
+	err := svc.UpdateFromScan(t.Context(), "x", "T","A","Al","G",1,1,2024,"h","f","a/m",100)
+	require.Error(t, err)
+}
+func TestSongEntToProto(t *testing.T) {
+	t.Parallel()
+	pb := song.EntToProto(&ent.Song{ID:"s1",Title:"T",Artist:"A"})
+	if pb.GetId() != "s1" { t.Errorf("id=%q",pb.GetId()) }
+	if pb.GetTitle() != "T" { t.Errorf("title=%q",pb.GetTitle()) }
+}
+func TestSongEntToProto_Nil(t *testing.T) {
+	t.Parallel()
+	if pb := song.EntToProto(nil); pb != nil { t.Error("should be nil") }
+}
+func TestEntsToProtoList(t *testing.T) {
+	t.Parallel()
+	pb := song.EntsToProtoList([]*ent.Song{{ID:"s1"},{ID:"s2"}})
+	if len(pb) != 2 { t.Fatalf("got %d", len(pb)) }
+	if pb[0].GetId() != "s1" { t.Errorf("id=%q",pb[0].GetId()) }
+}
+func TestEntsToProtoList_Nil(t *testing.T) {
+	t.Parallel()
+	if pb := song.EntsToProtoList(nil); len(pb) != 0 { t.Errorf("got %d", len(pb)) }
 }
