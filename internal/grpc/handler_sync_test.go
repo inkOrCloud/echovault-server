@@ -1,10 +1,8 @@
 package grpc_test
 
 import (
+	require "github.com/stretchr/testify/require"
 	"context"
-	"net"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	syncpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/sync/v1"
@@ -15,6 +13,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"net"
+	"testing"
 )
 
 func newSyncTestServer(t *testing.T) (syncpb.SyncServiceClient, func()) {
@@ -67,4 +67,39 @@ func TestSyncPushHandler(t *testing.T) {
 	if resp.GetServerVersion() != 1 {
 		t.Errorf("ServerVersion = %d, want 1", resp.GetServerVersion())
 	}
+}
+
+func TestSyncAckChangesHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newSyncTestServer(t)
+	defer cleanup()
+
+	push, err := c.PushChanges(context.Background(), &syncpb.PushChangesRequest{
+		DeviceId: "dev-ack",
+		Changes: []*syncpb.SyncChange{{
+			EntityType: "song",
+			EntityId:   uuid.New().String(),
+			Action:     syncpb.SyncChange_ACTION_CREATE,
+			DeviceId:   "dev-ack",
+		}},
+	})
+	require.NoError(t, err)
+
+	_, err = c.AckChanges(context.Background(), &syncpb.AckChangesRequest{
+		DeviceId:     "dev-ack",
+		AckedVersion: push.GetServerVersion(),
+	})
+	require.NoError(t, err)
+}
+
+func TestSyncEmptyChangesHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newSyncTestServer(t)
+	defer cleanup()
+
+	push, err := c.PushChanges(context.Background(), &syncpb.PushChangesRequest{
+		DeviceId: "dev-empty",
+	})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, push.GetServerVersion(), int64(0))
 }

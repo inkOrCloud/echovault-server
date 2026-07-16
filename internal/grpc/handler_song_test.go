@@ -1,12 +1,11 @@
 package grpc_test
 
 import (
+	require "github.com/stretchr/testify/require"
 	"context"
-	"net"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	commonpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/common/v1"
 	songpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/song/v1"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent/enttest"
@@ -15,6 +14,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"net"
+	"testing"
 )
 
 func newSongTestServer(t *testing.T) (songpb.SongServiceClient, func()) {
@@ -87,4 +88,58 @@ func TestSongPublishHandler(t *testing.T) {
 	if resp.GetSong().GetId() == "" {
 		t.Error("PublishSong returned empty ID")
 	}
+}
+
+func TestSongGetSongHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newSongTestServer(t)
+	defer cleanup()
+
+	pub, err := c.PublishSong(context.Background(), &songpb.PublishSongRequest{
+		Title: "Handler Get Me", FileHash: "h1",
+	})
+	require.NoError(t, err)
+
+	got, err := c.GetSong(context.Background(), &songpb.GetSongRequest{
+		Id: pub.GetSong().GetId(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Handler Get Me", got.GetSong().GetTitle())
+}
+
+func TestSongSearchSongsHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newSongTestServer(t)
+	defer cleanup()
+
+	_, err := c.PublishSong(context.Background(), &songpb.PublishSongRequest{
+		Title: "Summer Breeze", FileHash: "hsummer",
+	})
+	require.NoError(t, err)
+
+	results, err := c.SearchSongs(context.Background(), &songpb.SearchSongsRequest{
+		Query:      "summer",
+		Pagination: &commonpb.PaginationRequest{PageSize: 10},
+	})
+	require.NoError(t, err)
+	require.Len(t, results.GetSongs(), 1)
+}
+
+func TestSongListSongsHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newSongTestServer(t)
+	defer cleanup()
+
+	for _, title := range []string{"A Song", "B Song", "C Song"} {
+		_, err := c.PublishSong(context.Background(), &songpb.PublishSongRequest{
+			Title: title, FileHash: uuid.New().String(),
+		})
+		require.NoError(t, err)
+	}
+
+	results, err := c.ListSongs(context.Background(), &songpb.ListSongsRequest{
+		Pagination: &commonpb.PaginationRequest{PageSize: 2},
+	})
+	require.NoError(t, err)
+	require.Len(t, results.GetSongs(), 2)
 }

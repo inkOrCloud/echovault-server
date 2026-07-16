@@ -2,9 +2,6 @@ package grpc_test
 
 import (
 	"context"
-	"net"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	playlistpb "github.com/inkOrCloud/EchoVault/echovault-server/api/grpc/generated/echo_vault/playlist/v1"
@@ -16,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"net"
+	"testing"
 )
 
 func newPlaylistTestServer(t *testing.T) (playlistpb.PlaylistServiceClient, func()) { //nolint:ireturn
@@ -49,4 +48,112 @@ func TestPlaylistCreateAndGetHandler(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, "My List", resp.GetPlaylist().GetName())
+}
+
+func TestPlaylistAddSongAndListHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newPlaylistTestServer(t)
+	defer cleanup()
+
+	pl, err := c.CreatePlaylist(context.Background(), &playlistpb.CreatePlaylistRequest{
+		Name: "Songs List",
+	})
+	require.NoError(t, err)
+
+	_, err = c.AddSong(context.Background(), &playlistpb.AddSongRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+		SongId:     "song-1",
+	})
+	require.NoError(t, err)
+
+	songs, err := c.ListPlaylistSongs(context.Background(), &playlistpb.ListPlaylistSongsRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+	})
+	require.NoError(t, err)
+	require.Len(t, songs.GetSongs(), 1)
+	require.Equal(t, "song-1", songs.GetSongs()[0].GetSongId())
+}
+
+func TestPlaylistUpdateAndDeleteHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newPlaylistTestServer(t)
+	defer cleanup()
+
+	pl, err := c.CreatePlaylist(context.Background(), &playlistpb.CreatePlaylistRequest{
+		Name: "Original",
+	})
+	require.NoError(t, err)
+
+	updated, err := c.UpdatePlaylist(context.Background(), &playlistpb.UpdatePlaylistRequest{
+		Id:   pl.GetPlaylist().GetId(),
+		Name: "Updated Name",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Updated Name", updated.GetPlaylist().GetName())
+
+	_, err = c.DeletePlaylist(context.Background(), &playlistpb.DeletePlaylistRequest{
+		Id: pl.GetPlaylist().GetId(),
+	})
+	require.NoError(t, err)
+}
+
+func TestPlaylistRemoveSongHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newPlaylistTestServer(t)
+	defer cleanup()
+
+	pl, err := c.CreatePlaylist(context.Background(), &playlistpb.CreatePlaylistRequest{
+		Name: "Remove Test",
+	})
+	require.NoError(t, err)
+
+	_, err = c.AddSong(context.Background(), &playlistpb.AddSongRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+		SongId:     "song-to-remove",
+	})
+	require.NoError(t, err)
+
+	_, err = c.RemoveSong(context.Background(), &playlistpb.RemoveSongRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+		SongId:     "song-to-remove",
+	})
+	require.NoError(t, err)
+
+	songs, err := c.ListPlaylistSongs(context.Background(), &playlistpb.ListPlaylistSongsRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+	})
+	require.NoError(t, err)
+	require.Empty(t, songs.GetSongs())
+}
+
+func TestPlaylistReorderSongsHandler(t *testing.T) {
+	t.Parallel()
+	c, cleanup := newPlaylistTestServer(t)
+	defer cleanup()
+
+	pl, err := c.CreatePlaylist(context.Background(), &playlistpb.CreatePlaylistRequest{
+		Name: "Reorder",
+	})
+	require.NoError(t, err)
+
+	for _, sid := range []string{"a", "b", "c"} {
+		_, err = c.AddSong(context.Background(), &playlistpb.AddSongRequest{
+			PlaylistId: pl.GetPlaylist().GetId(),
+			SongId:     sid,
+		})
+		require.NoError(t, err)
+	}
+
+	_, err = c.ReorderSongs(context.Background(), &playlistpb.ReorderSongsRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+		SongIds:    []string{"c", "a", "b"},
+	})
+	require.NoError(t, err)
+
+	songs, err := c.ListPlaylistSongs(context.Background(), &playlistpb.ListPlaylistSongsRequest{
+		PlaylistId: pl.GetPlaylist().GetId(),
+	})
+	require.NoError(t, err)
+	require.Len(t, songs.GetSongs(), 3)
+	require.Equal(t, "c", songs.GetSongs()[0].GetSongId())
 }
