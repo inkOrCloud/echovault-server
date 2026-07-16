@@ -355,3 +355,156 @@ func TestUploadCover_DoesNotCallUpdater(t *testing.T) {
 		t.Errorf("CallCount = %d, want 0 for cover upload", updater.CallCount)
 	}
 }
+
+func TestUpload_InvalidType(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil)
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, _ := w.CreateFormFile("file", "t.mp3"); part.Write([]byte("d")); w.Close()
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=invalid&song_id=s1", &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 400 { t.Errorf("status=%d", resp.Code) }
+}
+func TestDownloadAudio_NotFound(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/files/download/audio/x", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 404 { t.Errorf("status=%d", resp.Code) }
+}
+func TestDownloadAudioWithRange(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "r1", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/r1", nil)
+	req.Header.Set("Range", "bytes=2-5")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 206 { t.Errorf("status=%d", resp.Code) }
+	if resp.Body.String() != "2345" { t.Errorf("body=%q", resp.Body.String()) }
+}
+func TestDownloadAudio_RangeSuffix(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "r2", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/r2", nil)
+	req.Header.Set("Range", "bytes=-3")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 206 { t.Errorf("status=%d", resp.Code) }
+	if resp.Body.String() != "789" { t.Errorf("body=%q", resp.Body.String()) }
+}
+func TestDownloadAudio_RangeToEnd(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "r3", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/r3", nil)
+	req.Header.Set("Range", "bytes=3-")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 206 { t.Errorf("status=%d", resp.Code) }
+	if resp.Body.String() != "3456789" { t.Errorf("body=%q", resp.Body.String()) }
+}
+func TestDownloadCover_NotFound(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/files/download/cover/x", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 404 { t.Errorf("status=%d", resp.Code) }
+}
+func TestDownloadCover_ETagMatch(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveCover(ctx, "e1", strings.NewReader("data"))
+	req1 := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/cover/e1", nil)
+	resp1 := httptest.NewRecorder()
+	h.ServeHTTP(resp1, req1)
+	etag := resp1.Header().Get("ETag")
+	req2 := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/cover/e1", nil)
+	req2.Header.Set("If-None-Match", etag)
+	resp2 := httptest.NewRecorder()
+	h.ServeHTTP(resp2, req2)
+	if resp2.Code != 304 { t.Errorf("status=%d", resp2.Code) }
+}
+func TestDeleteSong(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "d1", "t.mp3", strings.NewReader("a"))
+	req := httptest.NewRequestWithContext(ctx, "DELETE", "/api/v1/files/audio/d1", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 200 { t.Errorf("status=%d", resp.Code) }
+}
+func TestHealthEndpoint(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/health", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 200 || resp.Body.String() != `{"status":"ok"}` { t.Errorf("body=%q", resp.Body.String()) }
+}
+func TestParseRange_InvalidFormat(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "inv", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/inv", nil)
+	req.Header.Set("Range", "invalid")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 416 { t.Errorf("status=%d", resp.Code) }
+}
+type errStore struct { storage.Storage }
+func (e *errStore) GetAudio(context.Context, string) (io.ReadCloser, int64, error) { return nil, 0, io.ErrUnexpectedEOF }
+func TestDownloadAudio_StorageError(t *testing.T) { t.Parallel()
+	ls, _ := storage.NewLocalStorage(t.TempDir())
+	h := rest.NewHandler(&errStore{Storage: ls}, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/files/download/audio/x", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 404 { t.Errorf("status=%d", resp.Code) }
+}
+func TestUpload_NoFile(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/files/upload?type=audio&song_id=s1", strings.NewReader("x"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 400 { t.Errorf("status=%d", resp.Code) }
+}
+
+func TestDownloadCover_Success(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveCover(ctx, "c1", strings.NewReader("cover-data"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/cover/c1", nil)
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 200 { t.Errorf("status=%d", resp.Code) }
+	if resp.Body.String() != "cover-data" { t.Errorf("body=%q", resp.Body.String()) }
+	if ct := resp.Header().Get("Content-Type"); ct != "image/jpeg" { t.Errorf("Content-Type=%q", ct) }
+}
+
+type nonSeekerReader struct { *strings.Reader }
+func (r *nonSeekerReader) Close() error { return nil }
+type nonSeekableWrapper struct{ storage.Storage }
+func (w *nonSeekableWrapper) GetAudio(ctx context.Context, id string) (io.ReadCloser, int64, error) {
+	rc, sz, err := w.Storage.GetAudio(ctx, id)
+	if err != nil { return nil, 0, err }
+	d, _ := io.ReadAll(rc); rc.Close()
+	return &nonSeekerReader{Reader: strings.NewReader(string(d))}, sz, nil
+}
+func TestServeRange_NonSeekable(t *testing.T) { t.Parallel()
+	ls, _ := storage.NewLocalStorage(t.TempDir())
+	h := rest.NewHandler(&nonSeekableWrapper{ls}, nil); ctx := context.Background()
+	ls.SaveAudio(ctx, "ns1", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/ns1", nil)
+	req.Header.Set("Range", "bytes=2-5")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 206 { t.Errorf("status=%d", resp.Code) }
+	if resp.Body.String() != "2345" { t.Errorf("body=%q", resp.Body.String()) }
+}
+
+func TestServeRange_StartBeyondFile(t *testing.T) { t.Parallel()
+	h := newTestHandler(t, nil); ctx := context.Background()
+	h.Storage.SaveAudio(ctx, "big", "t.mp3", strings.NewReader("0123456789"))
+	req := httptest.NewRequestWithContext(ctx, "GET", "/api/v1/files/download/audio/big", nil)
+	req.Header.Set("Range", "bytes=100-110")
+	resp := httptest.NewRecorder()
+	h.ServeHTTP(resp, req)
+	if resp.Code != 416 { t.Errorf("status=%d", resp.Code) }
+}
