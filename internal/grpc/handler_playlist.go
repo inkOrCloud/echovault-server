@@ -86,3 +86,48 @@ func playlistEntToProto(p *ent.Playlist) *playlistpb.Playlist {
 		Type: playlistpb.Playlist_TYPE_USER,
 	}
 }
+
+// UpdatePlaylist updates a playlist's name and description.
+func (h *PlaylistHandler) UpdatePlaylist(ctx context.Context, req *playlistpb.UpdatePlaylistRequest) (*playlistpb.UpdatePlaylistResponse, error) {
+	p, err := h.svc.UpdatePlaylist(ctx, req.GetId(), req.GetName(), req.GetDescription())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
+	}
+	return &playlistpb.UpdatePlaylistResponse{Playlist: playlistEntToProto(p)}, nil
+}
+
+// DeletePlaylist deletes a playlist by ID.
+func (h *PlaylistHandler) DeletePlaylist(ctx context.Context, req *playlistpb.DeletePlaylistRequest) (*playlistpb.DeletePlaylistResponse, error) {
+	err := h.svc.DeletePlaylist(ctx, req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
+	}
+	return &playlistpb.DeletePlaylistResponse{}, nil
+}
+
+// ReorderSongs reorders songs in a playlist.
+func (h *PlaylistHandler) ReorderSongs(ctx context.Context, req *playlistpb.ReorderSongsRequest) (*playlistpb.ReorderSongsResponse, error) {
+	err := h.svc.ReorderSongs(ctx, req.GetPlaylistId(), req.GetSongIds())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
+	}
+	return &playlistpb.ReorderSongsResponse{}, nil
+}
+
+// ListPlaylistSongs returns all songs in a playlist.
+func (h *PlaylistHandler) ListPlaylistSongs(ctx context.Context, req *playlistpb.ListPlaylistSongsRequest) (*playlistpb.ListPlaylistSongsResponse, error) {
+	songs, err := h.svc.ListPlaylistSongs(ctx, req.GetPlaylistId())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error()) //nolint:wrapcheck // gRPC status errors are intentionally unwrapped
+	}
+	pb := make([]*playlistpb.PlaylistSong, len(songs))
+	for i, s := range songs {
+		pb[i] = &playlistpb.PlaylistSong{
+			PlaylistId: s.PlaylistID,
+			SongId:     s.SongID,
+			Position:   s.Position,
+			AddedBy:    s.AddedBy,
+		}
+	}
+	return &playlistpb.ListPlaylistSongsResponse{Songs: pb}, nil
+}

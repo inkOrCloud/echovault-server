@@ -163,3 +163,53 @@ func (s *Service) ListPlaylistSongs(ctx context.Context, playlistID string) ([]*
 	}
 	return songs, nil
 }
+
+// ReorderSongs reorders songs in a playlist by updating their positions.
+func (s *Service) ReorderSongs(ctx context.Context, playlistID string, songIDs []string) error {
+	// Fetch current songs in the playlist
+	currentSongs, err := s.client.PlaylistSong.Query().
+		Where(playlistsong.PlaylistID(playlistID)).
+		All(ctx)
+	if err != nil {
+		return fmt.Errorf("reorder songs - query current: %w", err)
+	}
+
+	// Build a set of current song IDs
+	currentIDs := make(map[string]bool, len(currentSongs))
+	for _, ps := range currentSongs {
+		currentIDs[ps.SongID] = true
+	}
+
+	// Validate all requested song IDs exist in the playlist
+	for _, sid := range songIDs {
+		if !currentIDs[sid] {
+			return fmt.Errorf("song %q not found in playlist: %w", sid, ErrSongNotFoundInPlaylist)
+		}
+	}
+
+	// Update positions in a transaction
+	tx, err := s.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("reorder songs - begin tx: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	for i, songID := range songIDs {
+		err = tx.PlaylistSong.Update().
+			Where(playlistsong.PlaylistID(playlistID), playlistsong.SongID(songID)).
+			SetPosition(int32(i * positionStep)). //nolint:gosec // safe: position step is small
+			Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("reorder songs - update position: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("reorder songs - commit: %w", err)
+	}
+	return nil
+}
