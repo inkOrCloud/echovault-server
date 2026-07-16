@@ -1,9 +1,9 @@
 package playlist_test
 
 import (
+	"time"
+	"errors"
 	"context"
-	"testing"
-
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/ent"
@@ -11,6 +11,7 @@ import (
 	"github.com/inkOrCloud/EchoVault/echovault-server/internal/service/playlist"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func newTestClient(t *testing.T) *ent.Client {
@@ -128,4 +129,81 @@ func TestRemoveSong(t *testing.T) {
 	songs, err := svc.ListPlaylistSongs(ctx, p.ID)
 	require.NoError(t, err)
 	require.Empty(t, songs)
+}
+
+func TestAddSong_Duplicate(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client); ctx := context.Background()
+	p, _ := svc.CreatePlaylist(ctx, "S", "", "u")
+	svc.AddSong(ctx, p.ID, "s1", "u")
+	_, err := svc.AddSong(ctx, p.ID, "s1", "u")
+	if !errors.Is(err, playlist.ErrSongAlreadyInPlaylist) { t.Errorf("err=%v", err) }
+}
+
+func TestRemoveSong_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client); ctx := context.Background()
+	p, _ := svc.CreatePlaylist(ctx, "R", "", "u")
+	err := svc.RemoveSong(ctx, p.ID, "x")
+	if !errors.Is(err, playlist.ErrSongNotFoundInPlaylist) { t.Errorf("err=%v", err) }
+}
+
+func TestGetPlaylist_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client)
+	_, err := svc.GetPlaylist(context.Background(), "x")
+	if !errors.Is(err, playlist.ErrPlaylistNotFound) { t.Errorf("err=%v", err) }
+}
+
+func TestUpdatePlaylist_NotFound(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client)
+	_, err := svc.UpdatePlaylist(context.Background(), "x", "N", "D")
+	if !errors.Is(err, playlist.ErrPlaylistNotFound) { t.Errorf("err=%v", err) }
+}
+
+func TestReorderSongs(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client); ctx := context.Background()
+	p, _ := svc.CreatePlaylist(ctx, "R", "", "u")
+	for _, sid := range []string{"a","b","c"} { svc.AddSong(ctx, p.ID, sid, "u") }
+	svc.ReorderSongs(ctx, p.ID, []string{"c","a","b"})
+	songs, _ := svc.ListPlaylistSongs(ctx, p.ID)
+	if songs[0].SongID != "c" || songs[2].SongID != "b" { t.Errorf("order wrong") }
+}
+
+func TestReorderSongs_Invalid(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client); ctx := context.Background()
+	p, _ := svc.CreatePlaylist(ctx, "R", "", "u")
+	svc.AddSong(ctx, p.ID, "s1", "u")
+	if err := svc.ReorderSongs(ctx, p.ID, []string{"s1","x"}); err == nil { t.Fatal("expected error") }
+}
+
+func TestListPlaylists_Empty(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client)
+	pl, _ := svc.ListPlaylists(context.Background(), "x")
+	if len(pl) != 0 { t.Errorf("got %d", len(pl)) }
+}
+
+func TestAddSong_Position(t *testing.T) {
+	t.Parallel(); client := newTestClient(t); defer client.Close()
+	svc := playlist.NewService(client); ctx := context.Background()
+	p, _ := svc.CreatePlaylist(ctx, "P", "", "u")
+	ps1, _ := svc.AddSong(ctx, p.ID, "s1", "u")
+	ps2, _ := svc.AddSong(ctx, p.ID, "s2", "u")
+	if ps2.Position <= ps1.Position { t.Errorf("ps2=%d <= ps1=%d", ps2.Position, ps1.Position) }
+}
+
+func TestPlaylistEntToProto(t *testing.T) {
+	t.Parallel()
+	pb := playlist.EntToProto(&ent.Playlist{ID:"pl-1",Name:"Test",CreatedAt:time.Now(),UpdatedAt:time.Now()})
+	if pb.GetId() != "pl-1" { t.Errorf("id=%q",pb.GetId()) }
+	if pb.GetName() != "Test" { t.Errorf("name=%q",pb.GetName()) }
+}
+
+func TestPlaylistEntToProto_Nil(t *testing.T) {
+	t.Parallel()
+	if pb := playlist.EntToProto(nil); pb != nil { t.Error("should be nil") }
 }
