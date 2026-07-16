@@ -166,3 +166,64 @@ func TestDeleteSongFiles(t *testing.T) {
 		t.Error("GetAudio() should fail after delete")
 	}
 }
+
+func TestNewStorage_Local(t *testing.T) { t.Parallel()
+	s, err := storage.NewStorage("local", t.TempDir())
+	if err != nil { t.Fatalf("err=%v", err) }
+	err = s.SaveAudio(context.Background(), "t", "f.mp3", strings.NewReader("d"))
+	if err != nil { t.Fatalf("SaveAudio err=%v", err) }
+}
+func TestNewStorage_Default(t *testing.T) { t.Parallel()
+	s, err := storage.NewStorage("unknown", t.TempDir())
+	if err != nil { t.Fatalf("err=%v", err) }
+	if s == nil { t.Fatal("nil") }
+}
+func TestNewStorage_S3(t *testing.T) { t.Parallel()
+	_, err := storage.NewStorage("s3", "")
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+}
+func TestNotFoundError(t *testing.T) { t.Parallel()
+	e := &storage.NotFoundError{Type: "audio", ID: "s1"}
+	if e.Error() != "audio not found: s1" { t.Errorf("got=%q", e.Error()) }
+}
+func TestS3_SaveAudio(t *testing.T) { t.Parallel()
+	err := (&storage.S3Storage{}).SaveAudio(context.Background(), "id", "n", strings.NewReader("d"))
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+}
+func TestS3_GetAudio(t *testing.T) { t.Parallel()
+	r, sz, err := (&storage.S3Storage{}).GetAudio(context.Background(), "id")
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+	if r != nil || sz != 0 { t.Error("expected nil/0") }
+}
+func TestS3_SaveCover(t *testing.T) { t.Parallel()
+	err := (&storage.S3Storage{}).SaveCover(context.Background(), "id", strings.NewReader("d"))
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+}
+func TestS3_GetCover(t *testing.T) { t.Parallel()
+	r, sz, err := (&storage.S3Storage{}).GetCover(context.Background(), "id")
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+	if r != nil || sz != 0 { t.Error("expected nil/0") }
+}
+func TestS3_Delete(t *testing.T) { t.Parallel()
+	err := (&storage.S3Storage{}).DeleteSongFiles(context.Background(), "id")
+	if !errors.Is(err, storage.ErrNotImplemented) { t.Errorf("err=%v", err) }
+}
+func TestDeleteSongFiles_AudioOnly(t *testing.T) { t.Parallel()
+	s, _ := storage.NewLocalStorage(t.TempDir()); ctx := context.Background()
+	s.SaveAudio(ctx, "d1", "t.mp3", strings.NewReader("a"))
+	_, _, err := s.GetAudio(ctx, "d1")
+	if err != nil { t.Fatalf("before: %v", err) }
+	s.DeleteSongFiles(ctx, "d1")
+	_, _, err = s.GetAudio(ctx, "d1")
+	if err == nil { t.Error("should error after delete") }
+}
+func TestGetAudio_EmptyDir(t *testing.T) { t.Parallel()
+	s, _ := storage.NewLocalStorage(t.TempDir()); ctx := context.Background()
+	_, _, err := s.GetAudio(ctx, "x")
+	if err == nil { t.Error("should error") }
+}
+
+func TestNewS3Storage(t *testing.T) { t.Parallel()
+	s, err := storage.NewS3Storage("", "")
+	if s != nil || err == nil { t.Error("expected nil + error") }
+}
